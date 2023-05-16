@@ -1,0 +1,283 @@
+# **********************   -  DEPLOYMENT -  ( works with ReplicaSet )  ********************************
+
+# Q :- What is the problem with  - RS & RC - ? 
+# A :- When in manifest file chnage the version of image and update the manifest file by changing the image version,
+#      and apply the image.    we are expecting  that pods are to be recreated with the latest version of image because
+#      you updated the image & manifest file too, but in reality it is not happen. pods r still using old verson image
+#      so we can not update the   - RS & RC - ... if we delete that pord only when will be created with the version of image
+#      so its not updating we have to delete  - RS & RC - then apply . but if we delete -RS & RC- then we face Downtime.
+#      and we are not achive zero downtine this is the reason we use    " Deployment "  .
+
+# Deployment :--- ' Deployment '  is the recomended way to to deploy application in k8s.
+#                   Deployment has a lot of feature like,,  Rolling update  &  we can Update the Deployment ( pods will be recreated,
+#                   - you dont want to delete and apply again , we can scale up and scale down the Deployment , roll-back to verious version )
+#                   Deployment create ReplicaSet and this ReplicaSet manage pods
+
+# Deployment stategeis  :-   1-  ReCreate     2- RollingUpdate    3- BlueGreen / canary deployment / Red Black deployment
+
+#  Recreate      :--  all of old pods r killed at once & get relaced all at once with the new once. 
+
+#  RollingUpdate :--  standard default deployment to k8s. it works by slowly, one by one , replacing pods of the 
+#                     previous version of your application with pods of the new  version without anycluster downtime.
+
+#  BlueGreen     :--  ( instead of updating the deploymenet, you create deployment to 2 version of deployment and update traffic using service to achive BG deployment.)
+#                      parallel  deployment .you have parallely differnt version of applications running in a different servers. 
+#                    without disturing existing applications. you are creating other applications (eg: two version of the application running at the same time.}
+
+
+
+
+# -------------------------------------------------------------------------------------------------- 
+#                           -  DEPLOYMENT -   (work with RS)
+# Deployment strategy ::--   ( RollingUpdate ) standard default deployment to k8s. 
+
+#   vi mydeployment.yml
+--- # DEPLOYMENT
+kind: Deployment   # --------------------- Deployment 'object'
+apiVersion: apps/v1
+metadata:
+   name: mydeployments     # ------------------- Name of ''Deployment''
+spec:
+   replicas: 2
+   selector:     
+     matchLabels:
+       name: diployment    # ------- same
+   template:
+     metadata:
+       name: testpod # -------- pod name 
+       labels:
+         name: diployment  # --------same
+     spec:
+      containers:
+        - name: cont1
+          image: ubuntu
+          command: ["/bin/bash", "-c", "while true; do echo HELL-AAMIR; sleep 5; done"]
+          ports:
+            - containerPort: 8080
+.           
+
+
+# vi mydeployment.yml
+# kubectl apply -f mydeployment.yml          result(deployment.apps/mydeployments created)                                                                                                  (kind=Deployment  , name= mydeployments)
+# cat  mydeployment.yml 
+# kubectl get deploy / deployment         
+# kubectl get pods                       ( bcz u describing in.yml  mydeployments=  mydeployments-646ddb49c-mmc            
+# kubectl get all        
+# kubectl get all --show-labels
+# kubectl describe deployment mydeployment      (deploymemnt name= mydeployments)  
+# kubectl get rs                                ( showing desired and current state
+# watch "kubectl get rs"                        ( watching )
+# kubectl get rs -o wide       
+# kubectl logs -f <podname>                     (what is running inside container ) print inside the container
+# kubectl exec <podname>  -- cat /etc/os-release                 (check os-releas)  
+
+#  Note ::  when image vesion change  
+ #      image: coolgourav147/nginx-custom   to   image: coolgourav147/nginx-custom:v2
+ # kubectl apply -f first-deploy.yml;watch "kubectl get rs -o wide"
+         
+  
+     #  OR 
+
+#  vi mydeployment.yml
+
+--- # Deployment type= RollingUpdate
+kind: Deployment   # ------ Deployment 'object'
+apiVersion: apps/v1
+metadata:
+   name: nginx-deployments     # -------- Name of ''Deployment''
+   labels: 
+     app: nginx  # ------- same
+spec:
+   replicas: 3
+   strategy:
+      type: RollingUpdate    # 1 new pod create & 1 old pod down & delete { achive zero down time }
+   selector:     
+    matchLabels:
+     app: my-nginx    # ------- same
+   template:
+     metadata:
+       labels:
+         app: my-nginx  # --------ssame
+     spec:
+       #nodeName: worker-1
+       containers:
+         - name: nginx
+           image: nginx:1.7.1
+           ports:
+             - containerPort: 80
+...             
+
+
+
+#        OR 
+
+
+#    RollingUpdate type Deployment
+
+--- # Deployment type RollingUpdate
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: 1st-deploy
+  labels:            
+    appname: my-deploy
+spec:    
+  replicas: 5
+  strategy:
+    type: RollingUpdate  # 1 new pod create & 1 old pod down & delete { achive zero down time }
+    rollingUpdate: 
+      maxSurge: 0  # --- when updating the Deployment. how many new version of pod can be created. # when new RS ceating then previous RS's 1 pod delete.
+      maxUnavailable: 2  # --- when updating the Deployment. maxim how many pods can be unavailable.
+  minReadySeconds: 60  # -- new pod created. ater '60s' old version of pod will be deleted. 
+  selector:
+    matchLabels:       # <map[string]string>
+      app: myapp
+  template:
+    metadata:
+      name: dpod
+      labels:            # label of pods
+        app: myapp
+    spec:     # this is for pod
+     containers:
+       - name: container
+         image: coolgourav147/nginx-custom:v2
+         resources:
+            requests:     # --- MINIMUM value of PODS
+              memory: "100Mi"  
+              cpu: "100m"
+            limits:       # --- MAXIMUM value of PODS
+              memory: "200Mi"  
+              cpu: "500m"
+...         
+
+# Recreate type Deployment
+
+--- # Deployment  type= Recreate
+kind: Deployment   # ------ Deployment 'object'
+apiVersion: apps/v1
+metadata:
+   name: nginx-deployments     # -------- Name of ''Deployment''
+   labels:
+     app: nginx  # ------- same
+spec:
+   replicas: 4
+   strategy:
+    type: Recreate    # --- all pod down and New create at same time.
+   selector:
+    matchLabels:
+     app: nginx    # ------- same
+   template:
+     metadata:
+       labels:
+         app: nginx  # --------ssame
+     spec:
+       containers:
+         - name: nginx
+           image: nginx:1.9.1
+           ports:
+             - containerPort: 80
+...    
+
+
+ 
+         # OR 
+
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: firstdeploy
+  labels:             # this label for RC
+    appname: firstdeploy
+  annotations:
+    kubernetes.io/change-cause: "my coustom messgege for rolllout"   #######################
+spec:    # this spec for RC
+  replicas: 5
+  selector:
+    matchLabels:       # <map[string]string>
+      app: myapp
+  template:
+    metadata:
+      name: dpod
+      labels:            # label of pods
+        app: myapp
+    spec:     # this is for pod
+     containers:
+       - name: container
+         image: coolgourav147/nginx-custom:v1
+...         
+
+--- # Deployment  type= RollingUpdate  Rajesh Video 12
+kind: Deployment   # ------ Deployment 'object'
+apiVersion: apps/v1
+metadata:
+   name: nginx-deployments     # -------- Name of ''Deployment''
+   labels:
+     app: nginx  # ------- same
+spec:
+   replicas: 4
+   strategy:
+     type: RollingUpdate    # --- one  pod down and create new one
+     rollingUpdate: 
+        maxSurge: 0  # --- when updating the Deployment. how many new version of pod can be created. # when new RS ceating then previous RS's 1 pod delete.
+        maxUnavailable: 2  # --- when updating the Deployment. maxim how many pods can be unavailable. {all 2 pods down completly then create new pod}
+   selector:
+    matchLabels:
+     app: nginx    # ------- same
+   template:
+     metadata:
+       labels:
+         app: nginx  # --------ssame
+     spec:
+       containers:
+         - name: nginx
+           image: nginx:1.9.1
+           ports:
+             - containerPort: 80
+...  
+
+
+
+
+
+# kubectl apply -f mydeployment.yml            ( image version 1)
+# kubectl apply -f mydeployment.yml --record   ( image version 2) {when u update image fire this cmnd for update and captured change cause}   # same
+# kubectl apply --filename=mydeployment.yml --record=true       # same  { captured change cause }
+# # kubectl get all
+
+# kubectl describe deployment mydeployment
+# kubectl get rs    
+# kubectl get pods                                    
+# kubectl scale --replicas=1 deploy mydeployments   
+# kubectl get deploy  
+# kubectl get rs -o wide    
+# kubectl logs -f mydeployments-55568dc64b-hqnnq                        (see inside the container)
+# kubectl exec mydeployments-55568dc64b-hqnnq  -- cat /etc/os-release  (check os-releas)
+
+#    kubectl apply -f mydeployment.yml;watch "kubectl get rs -o wide"    
+
+#  kubectl rollout status deployment mydeployments                  ( deployment = type….. mydeployments =name)
+#  kubectl rollout history deployment mydeployments                 (check rollout history)
+#  kubectl rollout history deployment mydeployments  --revision=1   (more details of revision details) 
+
+#  kubectl rollout undo --to-revision=2 'deploy/deployment' mydeployments      ( when u want to roll back which u want )                    
+#                                    {deploy = deployment} { name of deployment}
+#  kubectl rollout undo deploy/mydeployments            
+#  kubectl rollout undo deployment  mydeployments  --to-revision=2
+
+#  kubectl rollout pause deployment mydeployments
+#  kubectl rollout resume deploy  mydeployments                                     
+
+
+###  kubectl rollout history deployment firstdeploy
+###
+# RESULT --- >
+
+# deployment.apps/firstdeploy
+# REVISION  CHANGE-CAUSE
+# 1         <none>
+# 2         <none>
+
+# 3         kubectl apply --filename=first-deply.yml --record=true
+# 4         my coustom messgege for rolllout        #######################

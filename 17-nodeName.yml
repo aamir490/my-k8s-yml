@@ -1,0 +1,29 @@
+
+# vi nodeName.yml
+
+--- # when you want to create pod in ONE NODE only. like "worker-1".
+kind: Deployment   # ------ Deployment 'object'
+apiVersion: apps/v1
+metadata:
+   name: nginx-deployments     # -------- Name of ''Deployment''
+   labels: 
+     app: nginx  # ------- same
+spec:
+   replicas: 3
+   strategy:
+      type: RollingUpdate    # 1 new pod create & 1 old pod down & delete { achive zero down time }
+   selector:     
+    matchLabels:
+     app: my-nginx    # ------- same
+   template:
+     metadata:
+       labels:
+         app: my-nginx  # --------ssame
+     spec:
+       nodeName: worker-1 #--- nodeName has higher priority than the cordon ( schedulingDisable on worker-1 )
+       containers:
+         - name: nginx
+           image: nginx:1.7.1
+           ports:
+             - containerPort: 80
+...   

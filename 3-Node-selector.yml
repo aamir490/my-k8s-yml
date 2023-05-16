@@ -1,0 +1,397 @@
+
+#  **************  NODE SELECTORS **************#
+
+#  The Kubernetes scheduler can be constrained to place a pod on particular nodes using few different options.
+#..............................................
+# IMPERATIVE METHOD :-
+
+#  kubectl label nodes NODE-1 team=prod-team
+#...............................................
+#------------------------------------------------------------------------------------------------------------
+
+#  ********************  vi pod7.yml   - 8NODE SELECTOR EXAMPLE - **********************
+#  kubectl get nodes                                                      ( for labelling on nodes 1st checknodes)
+#  kubectl label nodes <IP-11.22.33.44>  hardware=t2-medium              ( <IP-11.22.33.44> is node , now labeleing on node )
+#  kubectl describe  nodes <IP-11.22.33.44(node-1)> | less               ( check labels on node )
+#  kubectl describe pod nodelabels                                       POD-name= nodelabels         ( ab use ne krdiya)
+
+--- # creat pod with node selector 
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nodelabels
+  labels:
+    env: development
+spec:
+    containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+    nodeSelector:   # --- NODE SELECTOR      ( jis node pr ye label hoga wahin pod create hoga )                               
+       hardware: "t2-medium"  # -- { kubectl label nodes NODE-1 team=prod-team } 
+...   
+#------------------------------------------------------------------------------------------------------------
+
+# nodeSelector is the simplest form of node selection constraint.
+# IMPERATIVE METHOD :-
+ #  kubectl get nodes
+ #  kubectl label nodes NODE-1 team=prod-team
+
+# vi my-pod.yml 
+--- # creat pod with node selector 
+kind: Pod
+apiVersion: v1
+metadata:
+  name: my-pod
+  labels:                                                   
+    env: prod  
+spec:
+  nodeSelector:
+     team: prod-team    # --- NODE selector LABEL / labeling the node  { kubectl label nodes NODE-1 team=prod-team }
+  containers:
+   - name: cont-1
+     image: ubuntu
+     command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+...  
+
+# OR
+
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: mem-server
+spec:
+    containers:
+       - name: dev-server
+         image: centos
+    nodeSelector:  # --- NODE SELECTOR
+         node: "w2"
+...   
+
+
+#/////////////////////////////////////////////////////////////////////////////////
+#------------------------------------------------------------------------------------------------------------
+#                           - N o d e   A f f i n i t y -
+ 
+
+#  node affinity : --  the affinity greatly expands the nodeSelector funcatinilty  introducing the following improvement.
+#                      
+# The affinity/anti-affinity language is more expressive. nodeSelector only selects nodes with all the specified labels.
+
+# Affinity/anti-affinity gives you more control over the selection logic.
+
+# Anit Affinity ; will make sure that poss are scheduled in all different nodes.
+
+
+
+# Node affinity: Specifies rules tht restrict or guide the scheduling of pods based on node labels.
+# Pod affinity: Specifies rules tht guide the scheduling of pods based on the labels of other pods already running on nodes.
+
+
+#(((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((())))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))(((((((())))))))
+
+# RULES Of node affinity :- 
+#    
+#   SOFT  ( prefrred )
+#   preferredDuringSchedulingIgnoredDuringExecution  -->( if the node label is not matching { some typo error between nodelabel } , pod will be scheduled  )
+
+#   HARD  ( required )
+#   requiredDuringSchedulingIgnoredDuringExecution   -->( pod will be scheduled, only if the nodelable mathces on the node otherwise not scheduled )
+#                                                       ( if the pods get scheduled on node, &  we nemove the lable on node. pod will be  NOT evivted. pod will continue to run )
+
+#   preferredDuringSchedulingRequiredDuringExecution -->( pod will be scheduled, only if the nodelable mathces on the node otherwise not scheduled )
+#                                                       ( if the pods get scheduled on node, &  we nemove the lable on node. pod will be evivted. pod will continue to run )
+
+#((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((()))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
+   
+# example :---- in our cluster 3 worker nodes are theres.
+
+# vi anti-affinity.yml
+#......................................................................
+--- # AntiAffinity
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-cache
+spec:
+  selector:
+    matchLabels:
+      app: store    # ----$ same
+  replicas: 4 # replica=4 ,,, node=3  RESULT ---> One pod pending ,
+  template:
+    metadata:
+      labels:
+        app: store  # ----$ same
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:   # its must pod which is created each and every Node.
+          #preferredDuringSchedulingIgnoredDuringExecution: # try to find Node, if not available,4th pod will schedule any other node.
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - store
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: redis-server
+        image: redis:3.2-alpine
+...  
+
+# kubectl apply -f anti-affinity.yml
+# kubectl get all -o wide   { one pod is pending state  bcz [requiredD.....]}
+#......................................................................
+
+
+# vi affinity+antiaffinity.yml
+#..................................................................................
+
+--- # affinity+antiaffinity
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-server
+spec:
+  selector:
+    matchLabels:
+      app: web-store
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: web-store
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - web-store
+            topologyKey: "kubernetes.io/hostname"
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - store
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: web-app
+        image: nginx:1.16-alpine
+...        
+#..................................................................................
+
+
+
+# ------------------ mithun k8s ---------------------
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: my-pod
+  labels:                                                   
+    env: prod  
+spec:
+  affinity:
+    podAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+           matchExpressions:
+           - key: name
+             operator: In
+             values:
+             - workone
+  containers:
+   - name: cont-1
+     image: ubuntu
+     command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+...  
+
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: my-pod
+  labels:                                                   
+    env: prod  
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: "name"
+            operator: In
+            values:
+            - workone
+  containers:
+   - name: cont-1
+     image: ubuntu
+     command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+...
+
+
+# ---------------------------------------------------------------------
+
+#+=================== Node Affinity ==================================================================================
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      affinity:
+        nodeAffinity:  # pods should only be scheduled on nodes that have a ' gpu=true ' label.
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: gpu
+                operator: In
+                values:
+                - "true"
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+# the nodeAffinity field is used to specify that the pods should only be scheduled on nodes that have a gpu=true label.
+#+====================================================================================================================
+
+
+#+================================== Pod Affinity ==================================================================================
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - nginx
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+
+# podAffinity field  used to specify tht pods should be scheduled on nodes where there r already running pods with the ' app=nginx ' label,
+# based on the topologyKey of the `kubernetes.io/hostname`.
+# This ensures that related or co-located pods are scheduled together on the same node,
+# which can help to reduce latency and improve network performance.
+
+#+====================================================================================================================
+
+
+#####################################################################
+#                 - Taints and Tolerations -
+#####################################################################
+
+# Taints and Tolerations:-------
+
+#   Node affinity is a property of Pods that attracts them to a set of nodes (either as a preference or a hard requirement). 
+#   Taints are the opposite --- they allow a node to repel a set of pods.
+
+# Taints and tolerations are a mechanism that allows you to ensure that pods are not placed on inappropriate nodes.
+# Taints are added to nodes, while tolerations are defined in the pod specification. 
+# When you taint a node, it will repel all the pods except those that have a toleration for that taint
+
+
+--- # we are tolerations the 'taints' for scheduling the pods on master node.
+kind: Pod
+apiVersion: v1
+metadata:
+  name: my-pod
+  labels:                                                   
+    env: prod  
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    imagePullPolicy: IfNotPresent
+  tolerations:
+  - key: "node-role.kubernetes.io/master" # <--- kubectl describe nodes | grep "Taints"
+    operator: "Exists" # --- if key has dosnt have value. ( instead of equal )
+    effect: "NoSchedule"
+...    
+
+
+
+
+# kubectl taint nodes   NODE-1    node=HatePod:NoSchedule      ( no execute , exixsiting pod runing )
+# kubectl taint nodes   NODE-1    node=HatePod:NoExecute       ( exixsting pod will be evicted on this node )
+
+... # we are tolerating " NoSchedule , NoExecute " so our pod will be scheduled on that node wherever i have these things. 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+  - name: my-container
+    image: nginx
+  tolerations:
+  - key: "node"
+    operator: "Equals"
+    value: "HatePod"
+    effect: "NoSchedule"
+  - key: "node"
+    operator: "Equals"
+    value: "HatePod"
+    effect: "NoExecute"
+...
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+

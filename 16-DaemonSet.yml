@@ -1,0 +1,66 @@
+#  ***************************  DaemonSet ***************************#
+# DaemonSet :- 'DaemonSet' is like Global service.  
+#               will make sure every node in your cluster will have a pod we can't sacle up scale down.           
+#               it will have a copy(one) of pod in each & every node of the cluster.
+#               with the help of 'DaemonSet' we can deploy application like a agent software like, monitoring agent & log agent on each and every node.
+
+
+# vi daemonset-deploymnt.yml
+
+#---------------------------------------------------------------------------------------------------------
+---
+apiVersion: apps/v1
+kind: DaemonSet   # --- in "DaemonSet",  will not mentain REPLICAs.
+metadata:
+  name: nginx-ds
+  #namespace: testns 
+  labels:
+    app: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.7.1
+          ports:
+            - containerPort: 80
+... 
+
+# we create ' Service ' too  for outside & inside  communications. { OPTIONAL } 
+---
+kind: Service    #------ Defines to create Service type Object
+apiVersion: v1
+metadata:
+  name: nginx-svs  # ----- service name
+  #namespace: testns # -- if your namespace already exsist  & uwant to create pod in ''testn''
+spec:
+  type: ClusterIP    #--- Specifies the service type i.e ClusterIP{inside}  OR  NodePort{outside}
+  selector:
+    app: nginx  #---- Apply this service to any pods which has the specific label.
+  ports:
+    - port: 80        # Containers port exposed
+      targetPort: 8080     # Pods port   
+...
+
+#---------------------------------------------------------------------------------------------------------
+
+# kubectl apply -f daemonset-deploymnt.yml
+
+# kubectl get all -o wide    ( DaewmonSet will create POd in every node in the cluster )
+#          ( No ReplicaSet comes,whrn u working with 'DaemonSet'.bcz DS will itself monitor all the pod)
+
+
+
+
+#  Use case pf DaemonSet :---
+
+#  kubectl get pods -n kube-system -o wide  
+#  kubectl get all -n kube-system -o wide  
+
+#  ( kube-proxy-6f5g ,, weave-net-5fgd4 ) thses pods running all the node. in our cluster.

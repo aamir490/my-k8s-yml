@@ -1,0 +1,171 @@
+
+#                                                    - V O L U M E S -
+#
+
+# VOLUMES ::--A Kubernetes volume is a directory containing data.
+#             A Volume in Kubernetes represents a directory with data that is accessible across multiple containers in a Pod. 
+#             The container data in a Pod is deleted or lost when a container crashes or restarts, but when you use a volume, 
+#             the new container can pick up the data at the state before the container crashes.
+#              volumes are specially imp for 'statefull applictaions' , like Databases,
+
+# K8s VOLUME TYPE :- EmptyDir Volumes , hostPath Volumes , Persistent Volumes , Volumes ConfigMap , Ephemeral Volumes .
+
+
+
+#----------------------------------------------------------------------------------------------------------------
+
+# ********************  | emptydir |   V O L U M E S    **********************  { Default strorage given by K8s }
+
+#  [  with EmptyDir : Default strorage given by K8s ]        (ek pod ke andr 2 container access same voluime) 
+
+--- # emptydir
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myvolemptydir # --- pod name
+spec:
+  containers:  #----- both container access same volume ( so volume name should be same )
+  - name: c1     # ---- Container-1..........
+    image: centos
+    command: ["/bin/bash", "-c", "sleep 15000"]
+    volumeMounts:                                    # ------- Mount definition inside the container
+      - name: xchange # ---------------VOLUME----name same  
+        mountPath: "/tmp/xchange" #----------------------------- volum mount path         
+  - name: c2     # ---- Container-2..........
+    image: centos
+    command: ["/bin/bash", "-c", "sleep 10000"]
+    volumeMounts:
+      - name: xchange # ---------------VOLUME----name same 
+        mountPath: "/tmp/data"   #------------------------------- volum mount path            
+  volumes:          # --------volume define                                               
+  - name: xchange
+    emptyDir: {}   # ------ Volume type   ''emptydir''  
+...   
+#------------------------------------------------------------------------------------------------
+
+
+
+#------------------------------------------------------------------------------------------------
+# ********************  | HOST PATH |   VOLUMES    **********************
+
+#  [ HOSTPATH ] (1 pod , 2 pod ki volume ko acesss krna chahta) **( volume map to host )*
+
+#           1 POD wants to access 2nd pods data  and mapped with HOST machine,,..
+
+# ---------- $$$$$$$$$$   '' HOST PATH ''
+
+--- # HOST PATH
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myvolhostpath
+spec:    
+  containers:
+  - image: centos
+    name: testc
+    command: ["/bin/bash", "-c", "sleep 15000"]
+    volumeMounts:  # --- for using volume 'path: /tmp/data'  
+    - name: testvolume      ## --- same 
+      mountPath: /tmp/hostpath
+  volumes:
+  - name: testvolume        ## --- same
+    hostPath:    # --- host machine 
+      path: /tmp/data  # --- if 'data' directory not exist in /tmp . k8s will create 'data' directory.
+...
+#------------------------------------------------------------------------------------------------
+
+
+
+
+#------------------------------------------------------------------------------------------------
+# ********************  |%%%%%%%%  P E R S I S T E N T   V O L U M E %%%%%%%%  |   VOLUMES    **********************
+
+
+# PersistentVolume :--       (PV, alway available ) is a piece of networked storage in the cluster that has been provisioned by an administrator.
+#                            (PV) is a cluster void resource. PV are independent of the lifecycle of the pod that uses it,meaning that even if the pod shuts down, the data in the volume is not erased. 
+
+# PersistentVolumeClaim :--  (PVC) is a request for storage by a user. Pods consume node resources and PVCs consume PV resources.                       
+#                            This is a request sent by a Kubernetes node for storage. The claim can include specific storage parameters required by the application,
+#                            for example an amount of storage, or a specific type of access (read/write, read-only, etc.).
+
+
+#---------------------------------------------------------------------------------------------------------------------------------------------------
+
+# ---------- &&&&&&      MAKE PERSISTANT VOLUME    ---    vi mypv.yml
+
+--- # MAKE PERSISTANT VOLUME
+apiVersion: v1
+kind: PersistentVolume    # ----- 'Persistent Volume'   object
+metadata:
+  name: myebsvol     # -------- name of "PV"
+spec:
+  capacity:
+    storage: 1Gi # ---- WE TAKE -10GB TO EBS-,,BUT we take only -'1Gi'-
+  accessModes:
+    - ReadWriteOnce  # --- volume can be mounted as read-write by a single node. {at a time only one pod can actually do opration}
+  persistentVolumeReclaimPolicy: Recycle #Retain #Delete
+  awsElasticBlockStore:   # ----- AWS elastics store
+    volumeID: vol-08ebb4393908cd4a4  # ------ YAHAN APNI EBS VOLUME ID DAALO
+    fsType: ext4
+...    
+
+
+# ---------- &&&&&&  PERSISTANT VOLUME CLAIM ---  mypvc.yml 
+
+--- # PERSISTANT VOLUME CLAIM
+apiVersion: v1
+kind: PersistentVolumeClaim   # ----- 'Persistent Volume Claim'   object
+metadata:
+  name: myebsvolclaim  # -------- name of "PVC"    ( claimName: myebsvolclaim )
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests: 
+      storage: 1Gi # ----- hmko ""1Gi""  'Persistent Volume'  se milegi
+...      
+
+
+
+# ---------- &&&&&&  FOR USING  PERSISTANT VOLUME CLAIM ---
+
+##  vi deploypvc.yml
+---
+apiVersion: apps/v1
+kind: Deployment   # ------ deployment object
+metadata:
+  name: pvdeploy   # name of deployment
+spec:
+  replicas: 1
+  selector:      # tells the controller which pods to watch/belong to
+    matchLabels:
+     app: mypv      ###--- SAME
+  template:
+    metadata:
+      labels:
+        app: mypv   ###--- SAME 
+    spec:
+      containers:
+      - name: shell   # --- CONTAINER name
+        image: centos
+        command: ["bin/bash", "-c", "sleep 10000"]
+        volumeMounts:
+        - name: mypd   # -----volume mount
+          mountPath: "/tmp/persistent" # ------ INSIDE CONTAINER MOUNT PATH  ( WORK HERE )
+      volumes:
+        - name: mypd
+          persistentVolumeClaim:      
+            claimName: myebsvolclaim  # ----------- ebs VOLUME PATH          ( BACKUP HERE )
+...                      
+ 
+#---------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Name:              myebsvolclaim
+Namespace:         deault
+strorageClass:     myebsvolclaim
+status:            Bound
+labels:            <none>
+capacity:          1Gi
+Access:            RWO
+volumeMode:        Filesystem

@@ -1,0 +1,105 @@
+
+#                                           --  L i v e n e s s   &   R e a d i n e s s  -- 
+
+# prob :--Proof is health check that can be configured to check the health of the container running in the pod.
+
+# A prob may return the following reault,,
+# 1 success
+# 2 failure
+# 3 unknown
+
+# Liveness & Readiness:-  Liveness and Readiness probes are used to control the health of an application running inside a Pod’s container. 
+#                         Liveness probe checks the container health as we tell it do, and if for some reason the liveness probe fails, it restarts the container.
+
+# Liveness :- Liveness  probes determine whether or not an application running in a container is in a healthy state.
+#             If the liveness probe detects an unhealthy state, then Kubernetes kills the container and tries to redeploy it.
+#             Liveness probe checks the container health as we tell it do, and if for some reason the liveness probe fails, it restarts the container.
+
+# Readiness :- Readiness probes determine whether or not a container is ready to serve requests. 
+#              If the readiness probe returns a failed state, then Kubernetes removes the IP address for the container from the endpoints of all Services.
+
+# Summary
+#     Both liveness & readiness probes are used to control the health of an application. 
+#     Failing liveness probe will restart the container, whereas failing readiness probe will stop our application from serving traffic.
+
+
+
+
+# Implementation of Probes :-
+
+# 1- command Prob :- in this probe the controller Get the container to execute specific command in order to perform probe in the container.
+
+# 2- HTTP Request Prob :- in this probe the controller GET  http request to the given address to either poat or host nameto perform probe in the container.
+#                          we can set the following fields to configure the HTTp prob :-
+                          # port number   # hostname    # http header   #  TCP socket prob 
+
+
+# Restart Policy :---
+
+# 1- Always     :- Always restart the pod whenever it twrminate.
+# 2- On Failure :-
+# 3- Never      :- 
+
+#--------------------------------------------------------------------------------------------------------------------
+
+#                            - HEALTHCHECK / LIVENESSPROBE -   
+
+--- # HEALTHCHECK / LIVENESSPROBE
+apiVersion: v1
+kind: Pod    # --------- object pod
+metadata:
+  name: mylivenessprobe   # ---- pod name
+  labels:
+    test: liveness
+spec:
+  restartPolicy: Always # Never
+  containers:
+  - name: liveness    # ---- container name
+    image: ubuntu:latest
+    args:
+      - /bin/sh
+      - -c
+      - touch /tmp/healthy; sleep 1000   # ------ creat file   ( touch /tmp/healthy; sleep 30; rm /tmp/healthy;sleep 600 )
+    livenessProbe:   # ----  liveness-prob (we check that 'healthy' name's file present or not )
+      exec:
+        command:
+          - cat
+          - /tmp/healthy
+      initialDelaySeconds: 5  # ---- after '5sec' start the Helath-chek.
+      periodSeconds: 5        # ---- every '5sec'next Health-check after '5sec'.   
+      timeoutSeconds: 30      # ---- if dont reply frm Health-check. kill the process and restart the containr.
+...
+
+#--------------------------------------------------------------------------------------------------------------------
+
+
+
+
+#--------------------------------------------------------------------------------------------------------------------
+
+#                            - HEALTHCHECK / READINESSPROBE -   
+
+--- # HEALTHCHECK / READINESSPROBE
+apiVersion: v1
+kind: Pod    # --------- object pod
+metadata:
+  name: readiness-command-probe   # ---- pod name
+spec:
+  restartPolicy: Always # Never
+  containers:
+  - name: readiness  # ---- container name
+    image: ubuntu:latest
+    command:
+      - /bin/sh
+      - -ec
+      - sleep 30; touch /tmp/healthy; sleep 600 
+    readinessProbe:   # ----> will check or verify whether ur application running or not.
+      exec:
+        command: # ----> if comnd fails, application still running.but it will stop to recive any more request.
+          - cat
+          - /tmp/healthy
+      initialDelaySeconds: 10  # ---- after '5sec' start the Helath-chek.
+      periodSeconds: 5        # ---- every '5sec'next Health-check after '5sec'.   
+      timeoutSeconds: 30      # ---- if dont reply frm Health-check. kill the process and restart the containr.
+...
+#--------------------------------------------------------------------------------------------------------------------

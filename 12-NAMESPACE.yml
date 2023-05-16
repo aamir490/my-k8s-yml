@@ -1,0 +1,172 @@
+##########################################################################
+#                       -  N A M E S P A C E S  -
+##########################################################################
+
+#-----------------------------------------------------------------------------------------------
+# ------------ $$$$$$$$$  create NAMESPACE  through manifest.
+
+# vi devns.yml 
+
+--- # create NAMESPACE
+apiVersion: v1
+kind: Namespace  # ---- object of Namespace
+metadata:
+   name: dev   # --- namespace names
+   labels:    
+     name: dev
+...     
+
+# ------------ $$$$$$$$$  for testing NAMESPACE ( make pod ) --------------------
+
+# vi pod.yml
+--- # pod 
+kind: Pod                              
+apiVersion: v1                     
+metadata:                           
+  name: testpod                  
+spec:                                    
+  containers:                      
+    - name: c00                     
+      image: ubuntu              
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+  restartPolicy: Never   
+...
+
+ #  kubectl apply -f pod1.yml -n dev         (  pod/testpod created    in  ur namespace)    dev=namespace
+ #   ( we create pod through manifest but  we don’t mantion name space so, when we apply --namespace dev  )
+
+#-----------------------------------------------------------------------------------------------
+
+
+## create namespace through  yml file
+
+--- # create namespace through  yml file
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-pod   # ---- pod name 
+  namespace: project-1  # --- k8s create PODS in this namesoace
+spec:
+  containers:
+    - name: web
+      image: nginx
+      ports:
+        - name: web
+          containerPort: 80
+          protocol: TCP
+...
+
+
+    # OR
+
+    
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: pod4
+  namespace: testns ## mention ns name
+  labels:
+    app: myapp1
+    type: frontend
+spec:
+  containers:
+    - name: seco
+      image: coolgourav147/nginx-custom
+      resources:
+         requests:
+           memory: 500Mi    ## always lower than limits
+         limits:
+           memory: 900Mi    ## always greater than requests
+...
+
+# ---------------------------------------------------------------------------------------------------------------------------------
+
+
+## when u create pods in ns:
+ #   kubectl apply -f podname.yml
+
+#  *********  NAMESPACES  ( isolation of PODS ) ***********************
+
+# NOTE:: RESOURCE QUOTA is always set to the Namespace  
+#  Limt range is only applicabe for  {PODS ,, CONTAINERS ,, STRORAGE}
+# First check Default Namespace  for PODS…
+
+# Kubectl run web-server --image=nginx               #---- create in default name space    (imerative method)
+# kubectl run web-server --image=nginx -n project-1  #---- create pod in PROJECT-1 Namespace (imerative method)
+# kubectl get pods -o wide -n project-1              #---- check pods in PROJECT-1 Namespace
+# Kubectl delete pod web-server -n PROJECT-1         #---- delete pods in PROJECT-1 Namespace
+# kubectl describe ns project-1                      #----  for checking RESOURCE QUOTAS
+# kubectl get quota -n project-1
+# kubectl describe quota project-1-quota -n project-1 #---- ( display used & unsed quota for project-1 )
+# kubectl delete pods --all -n project-1              #----  ( delete all pods under project-1 namespace )
+# kubectl get pods -n project-1                       #---- ( checking pods in project-1 )
+# kubectl get all -n project-1                        #---- ( checking all pods in project-1 )
+# kubectl get all --all-namesapces                    #---- ( complete all list of namespace in k8s ) 
+# kubectl get all -A                                  #---- ( complete all list of all namespace in k8s ) 
+# kubectl describe  pod web-server -n project-1
+# Kubectl edit namespace project-1                    #---- (describe project-1 quota)
+# kubectl delete pods --all -n  project-1             #---- ( delete all rununig pods in project-1)
+# kubectl get pods                 #---- when u create pod in name space then No resources found in default namespace.)
+# kubectl get all -n kube-system   #---- default & most importtant pods and namespace 
+
+
+
+#   kubectl get namespace             -------->          default           Active         11m
+#                                                        kube-node-lease   Active         11m
+#                                                        kube-public       Active         11m
+#                                                        kube-system       Active         11m
+# Note ::--  now we create own namespace,,,,
+
+# 1  kubectl create ns testns           #--- ( imperative method , testns = namespace name )
+# 3  vi devns.yml                       #--- ( declaerative method  of creating  Namespace )
+# 4  kubectl apply -f devns.yml -v=7    #--- ( namespace/dev created ) ( -v=7 == verbose mod )                        
+# 5  kubectl get namespace              #--- ( namespace created )         
+# 5  kubectl get all  -n  kube-public   #--- ( we don’t have anything ) 
+
+# NOTE  :: -- for testing make pod in ( dev  namespace )
+
+# 6  vi pod1.yml
+# 7  kubectl apply -f pod1.yml -n dev           #--- ( pod/testpod created  in your namespace) dev=namespace
+#    kubectl apply -f pod1.yml --namespace dev  
+# 8  kubectl get pods -n dev                    #---  (namespce pod)      NAME   READY    STATUS    
+#                                                                       testpod   1/1     Running   
+#    kubectl get pods -o wide -n dev            #--- ( full details of namespce pod )
+
+# Note ::-- if u deleteing the pod 1st mention the namespace.
+
+# 10  kubectl delete -f pod1.yml -n dev         #--- ( delete pods under 'dev' namespace ) 
+#    Now aply  again :- 
+#    kubectl apply -f pod1.yml -n dev   
+
+# Note ::--  If you want k8s search pod in your name space directly ( jaha hm kaam kr rahewaha dekhe )
+
+#     kubectl config get-contexts             project-1            added      (check namespce admin)
+#     kubectl config delete-contexts    project-1                    project-1 delete      
+
+# 11 kubectl config set-context $(kubectl config current-context) --namespace=dev
+#                 RESULT --->       (Context "minikube" modified. )
+
+#    kubectl config set-context --current  --namespace=testns
+#    kubectl config set-context --current  --namespace=default
+
+# 11  kubectl config set-context $(kubectl config current-context) --namespace=kubernetes-admin@kubernetes
+#                                  (for set the default )
+# Note :: Now u fired simple command ” kubectl get pods ” s0 k8s treat as a default namespcace
+# 12  kubectl get pods               NAME      READY   STATUS    RESTARTS   AGE
+#                                   testpod   1/1     Running                 0   
+
+# Note :: -- now u want to check which namespace u seeing now (jis namespace me dekh rha hai wo bteya)
+# 13  kubectl config view | grep namespace:                      (namespace: dev)
+# 14  kubectl config view                                 name: context_info
+#                                                                    namespace: dev
+# Note :: -- If you want k8s search pod in Default namespace
+# 15   kubectl get pods -n default
+# 16   kubectl delete -f pod1.yml -n dev 
+
+# Note ::-- create namespace throuuhh cmnd line
+# 16 kubectl create ns my-personal
+# 17 kubectl config set-context --current --namespace=my-personal   ( my-personal moved to defalt name space)
+ 
+
+  

@@ -1,0 +1,473 @@
+ 
+#-------------------------------------------------------------------------------------------------------------------
+#                                          - S E R V I C E -   ---->  ( applied to RS )
+
+#  1 ----> ClusterIP           ( default )   ( inside  )   (within a cluster)
+#  2 ----> NodePort                          ( outside )
+#  3 ----> Headless
+#  3 ----> LoadBalancer
+#
+
+#-------------------------------------------------------------------------------------------------------------------
+
+#============================================================================================================
+#############################################################
+#                                   ' C L U S T E R  IP '
+#############################################################
+#============================================================================================================
+# 1- NODE'S POD   TO   2 - NODE'S POD    COMMUNICATION THROUGH   ***** %%%%%%%%%%%
+
+ # -------- $$$$$$$         vi deployhttpd.yml  
+--- # create deployment                   
+kind: Deployment   # -------- kind is deploymnet 
+apiVersion: apps/v1
+metadata:
+   name: mydeployments
+spec:
+   replicas: 1
+   selector:      # tells the controller which pods to watch/belong to
+    matchLabels:
+     name: deployment
+   template:
+     metadata:
+       name: testpod1
+       labels:
+         name: deployment
+     spec:
+      containers:
+        - name: c00
+          image: httpd
+          ports:
+          - containerPort: 80
+...          
+
+ # -------- $$$$$$$     FOR CREATE SERVICE  ( for Deployment )  --______----------------------
+
+#  vi service.yml        ( this sercixe give static virtual ip for our cluster )
+--- # 
+kind: Service    #---------- Defines to create Service type Object
+apiVersion: v1
+metadata:
+  name: demoservice
+  # namespace: testn # -- if your namespace already exsist  & uwant to create pod in ''testn''
+spec:
+  ports:
+    - port: 80       #---------- Containers port exposed
+      targetPort: 80 #-------------------- Pods port
+  selector:
+    name: deployment #------------ Apply this service to any pods which has the specific label
+  type: ClusterIP    #----------- Specifies the service type i.e ClusterIP or NodePort
+...
+#==========================================================================================================
+
+
+#---------------------------------------------------------------------------------------------------------
+#  vi myservive.yml 
+--- # create pods
+kind: Pod                              
+apiVersion: v1                     
+metadata:                           
+  name: testpod 
+  labels:          # ----- label of pods
+     apps: my-app
+  namespace: testns   # -- if your namespace already exsist  & uwant to create pod in ''testn''               
+spec:                                    
+  containers:                      
+    - name: c1                    
+      image: ubuntu              
+      ports:
+        - containerPort: 8080
+...
+
+--- # create service 
+kind: Service    #------ Defines to create Service type Object
+apiVersion: v1
+metadata:
+  name: demoservice  # ----- service name
+  namespace: testns # -- if your namespace already exsist  & uwant to create pod in ''testn''
+spec:
+  type: ClusterIP    #--- Specifies the service type i.e ClusterIP or NodePort
+  selector:
+    apps: my-app #---- Apply this service to any pods which has the specific label
+  ports:
+    - port: 80        # Containers port exposed
+      targetPort: 8080     # Pods port   
+...
+
+
+#  vi myservive.yml 
+#  kubectl apply -f myservive.yml
+#  kubectl get all -n testns   # --- ( showing pod name , showing service name IP , service type)
+#  kubectl get svc             # ---      NAME           TYPE        CLUTR-IP       EXTRNL-IP     PORT
+#                                      demoservice     ClusterIP   10.110.179.182    <none>     80:32282/TCP  
+
+#  kubectl get svc -o wide -n test-ns      
+#                                            NAME           TYPE        CLUTR-IP       EXTRNL-IP     PORT          SELECTOR
+#                                        demoservice     ClusterIP   10.110.179.182    <none>     80:32282/TCP   apps: my-app
+
+#  kubectl describe svc demoservice -n testns    # --- ( full details of service end ponit)   
+#  kubectl edit svc demoservice -n testns -o yml 
+# 
+#   kubectl get pods -o wide --show-labels -n test-ns
+#------------------------------------------------------------------------------------------------------------
+
+
+
+#-------------------------------------------------------------------------------------------------
+
+ # -------- $$$$$$$     FOR CREATE SERVICE  ----------------------
+
+#  vi service.yml
+---
+kind: Service    #---------- object SERIVCE 
+apiVersion: v1
+metadata:
+  name: demoservice
+  # namespace: testns # -- if your namespace already exsist  & uwant to create pod in ''testn''
+spec:
+  ports:
+    - port: 80       #---------- Containers port exposed
+      targetPort: 80 #-------------------- Pods port
+  selector:
+    name: deployment #------------ Apply this service to any pods which has the specific label
+  type: ClusterIP    #----------- Specifies the service type i.e ClusterIP or NodePort
+...         
+#------------------------------------------------------------------------------------------------
+
+
+#==========================================================================================
+ 
+--- # Deployment  type= Recreate
+kind: Deployment   # ------ Deployment 'object'
+apiVersion: apps/v1
+metadata:
+   name: db-server     # -------- Name of ''Deployment''
+   labels:
+     app: db-server# ------- same
+spec:
+   replicas: 1
+   strategy:
+    type: Recreate    # --- all pod down and New create at same time.
+   selector:
+    matchLabels:
+     app: db-server  # ------- same
+   template:
+     metadata:
+       labels:
+         app: db-server  # --------ssame
+     spec:
+       containers:
+         - name: nginx
+           image: nginx:1.9.1
+           ports:
+             - containerPort: 80
+...  
+
+# Now create Service for 'db-server' through command line.
+
+# --->  kubectl expose deployment db-server --type=ClusterIP --port 80 --target-port=80
+
+                                        # or
+
+# Now create Service for 'db-server' through manifest.
+
+# --->  vi db-service.yml
+
+---
+kind: Service    #---------- object SERIVCE 
+apiVersion: v1
+metadata:
+  name: my-services
+spec:
+  selector:
+    app: db-server #------------ Apply this service to any pods which has the specific label
+  ports:
+    - protocol: TCP
+      port: 80         #---------- Containers port exposed
+      targetPort: 8081 #-------------------- Pods port
+  type: ClusterIP      #----------- Specifies the service type i.e ClusterIP or NodePort
+... 
+#==========================================================================================
+
+
+
+
+
+#============================================================================================================
+##############################################################################
+#                                        -  N o d e P o r t    - 
+##############################################################################
+#============================================================================================================
+
+#-------------------------------------------------------------------------------------------------------------
+
+--- # create deployment                   
+kind: Deployment   # -------- kind is deploymnet 
+apiVersion: apps/v1
+metadata:
+   name: mydeployments
+spec:
+   replicas: 1
+   selector:      # tells the controller which pods to watch/belong to
+    matchLabels:
+     name: deployment
+   template:
+     metadata:
+       name: testpod1
+       labels:
+         name: deployment  # ---- same
+     spec:
+      containers:
+        - name: c00
+          image: httpd
+          ports:
+          - containerPort: 80
+...   
+
+---
+kind: Service    # Defines to create Service type Object
+apiVersion: v1
+metadata:
+  name: demoservice
+spec:
+  ports:
+    - port: 80        # Containers port exposed
+      targetPort: 80     # Pods port
+  selector:
+    name: deployment    #    # ---- same   Apply this service to any pods which has the specific label
+  type: NodePort        # Specifies the service type i.e ClusterIP or NodePort
+...  
+#-----------------------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------
+
+--- # NodePort
+kind: Service                             # Defines to create Service type Object
+apiVersion: v1
+metadata:
+  name: myservice
+  labels:
+    servicelab: labelname
+spec:
+  type: NodePort             # ----------svc type NodePort
+  ports:
+    - nodePort: 32000             # yaha  jo  bhi request ayegi
+      port: 9000                  # yaha ayegi
+      targetPort: 80              # 9000 issko yaha bhej defa
+  selector:
+    name: deployment                    # Apply this service to any pods which has the specific label
+    type: app                      # Specifies the service type i.e ClusterIP or NodePort
+...    
+#------------------------------------------------------------------------------------------------
+
+
+#-----------------------------------------------------------------------------------------------------
+
+---
+kind: Pod                              
+apiVersion: v1                     
+metadata:                           
+  name: testpod 
+  labels:          # ----- label of pods
+     apps: my-app
+  namespace: testns   # -- if your namespace already exsist  & uwant to create pod in ''testn''               
+spec:                                    
+  containers:                      
+    - name: c1                    
+      image: ubuntu              
+      ports:
+        - containerPort: 8080
+...
+
+---
+kind: Service      # ---------- Defines to create Service type Object
+apiVersion: v1
+metadata:
+  name: myservice
+  namespace: testns
+spec:
+  type: NodePort    #--------  svc type NodePort
+  selector:
+     apps: my-app                    
+  ports:
+    - port: 80                  # yaha ayegi
+      targetPort: 8080             # 9000 issko yaha bhej defa 
+...    
+
+#-----------------------------------------------------------------------------------------------------
+
+
+#==========================================================================================
+ 
+--- # Deployment  type= Recreate
+kind: Deployment   # ------ Deployment 'object'
+apiVersion: apps/v1
+metadata:
+   name: db-server     # -------- Name of ''Deployment''
+   labels:
+     app: db-server# ------- same
+spec:
+   replicas: 1
+   strategy:
+    type: Recreate    # --- all pod down and New create at same time.
+   selector:
+    matchLabels:
+     app: db-server  # ------- same
+   template:
+     metadata:
+       labels:
+         app: db-server  # --------ssame
+     spec:
+       containers:
+         - name: nginx
+           image: nginx:1.9.1
+           ports:
+             - containerPort: 80
+...  
+
+# Now create Service for 'db-server' through command line.
+
+# --->  kubectl expose deployment db-server --type=NodePort --port 80 --target-port=80
+
+                                        # or
+
+# Now create Service for 'db-server' through manifest.
+
+# --->  vi db-service.yml
+
+---
+kind: Service    #---------- object SERIVCE 
+apiVersion: v1
+metadata:
+  name: my-services
+spec:
+  selector:
+    app: db-server #------------ Apply this service to any pods which has the specific label
+  ports:
+    - protocol: TCP
+      port: 80         #---------- Containers port exposed
+      targetPort: 8081 #-------------------- Pods port
+  type: NodePort     #----------- Specifies the service type i.e ClusterIP or NodePort
+... 
+#==========================================================================================
+
+
+
+
+#============================================================================================================
+##############################################################################
+#                                        -  H E A D L E S S  - 
+##############################################################################
+#============================================================================================================
+
+# headless service is a service that does not have an IP address. 
+# Instead of having a cluster IP, a headless service returns the IP addresses of the pods it selects when queried by a DNS lookup.
+# Headless services are useful when you need to directly access individual pods in a service without load balancing.
+# Essentially, a headless service is just a service that forwards DNS requests to its underlying pods, rather than performing load balancing.
+
+# You can use a headless service to directly connect to the pods in the service by resolving the service name using DNS and using the returned IP addresses.
+# Headless services are commonly used in stateful sets or other distributed applications where direct pod-to-pod communication is required.
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-headless-service
+spec:
+  clusterIP: None # --- the   " clusterIP: None "  field indicates that this is a  'headless'  service. 
+  selector:
+    app: my-stateful-set
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 8080
+...
+
+#     When you create this headless service, Kubernetes will create a DNS record for it that returns the IP addresses 
+
+# $ nslookup <my-headless-service>
+
+# n summary, a headless service in Kubernetes is a way to directly access the individual pods in a service using DNS, 
+#    without having to go through a load balancer or assign cluster IP addresses to the service.
+
+
+#============================================================================================================
+##############################################################################
+#                                        -  L O A D   B A L A N C E R - 
+##############################################################################
+#============================================================================================================
+
+# In  SELF MANAGED K8S cluster, u can stil use load balancer to distribute traffic to ur applications, but u will need to set up and manage the load balancer yourself. 
+
+# 1- External LB :- u can set up an external LB tht sits outside of ur Kubernetes cluster to distribute traffic to ur applications. 
+# u can use popular LB solutions like NGINX, HAProxy, or Apache to set up an external LB. 
+# These solutions can be deployed on  separate set of nodes or virtual machines tht sit outside of ur K8S cluster.
+
+# 2- Nginx Ingress Controller :-Another option is to use an Ingress Controller to manage ur load balancing needs.
+# Nginx is a popular open-source web server that can be used as a load balancer.
+
+# 3- Traefik :- Traefik is a popular open-source reverse proxy and load balancer that is designed specifically for containerized environments. 
+
+# 4- MetalLB :- MetalLB is a Kubernetes-native load balancer that can be used to provide network load balancing for clusters
+#  that do not have an external load balancer available.  ( - MetalLB -  Lb implementation for bare metal k8s cluster)
+
+
+--- # Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example-app
+  template:
+    metadata:
+      labels:
+        app: example-app
+    spec:
+      containers:
+      - name: example-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+...
+
+
+--- # service LB for deploymnet
+apiVersion: v1
+kind: Service
+metadata:
+  name: example-service
+spec:
+  selector:
+    app: example-app
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  type: LoadBalancer
+...  
+     
+
+
+#                   ********         - M A N A G E D  K8S  C L U S T E R -         ********  
+
+
+# A managed k8s cluster is a k8s cluster that is fully managed by a cloud provider or a managed service provider. 
+# This means that the cloud provider or service provider is responsible for managing the infrastructure,
+#    configuring and updating the Kubernetes control plane, and ensuring high availability and scalability of the cluster.
+
+# Managed K8S clusters offer several benefits, such as reduced operational overhead, faster deployment & scaling of applications, 
+#   automatic updates and patches, and integrated monitoring and logging.
+
+# Some examples of managed Kubernetes services include:--
+
+#    a- Amazon Elastic Kubernetes Service  (EKS)
+#    b- Google Kubernetes Engine           (GKE)
+#    c- Microsoft Azure Kubernetes Service (AKS)
+#    d- DigitalOcean Kubernetes
+#    e- IBM Cloud Kubernetes Service
+

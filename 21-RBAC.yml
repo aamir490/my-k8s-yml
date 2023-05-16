@@ -1,0 +1,290 @@
+
+
+# root@-master:~# ls -a                       ls ------>  .kube
+# root@-master:~# cd .kube/                   ls ------> cache   config      ( config : main configuration file )
+# root@-master:~# vi config
+#________________________________________________
+
+# BY google.com
+
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: <ca-data-here>
+    server: https://172.98.32.203:66663
+  name: <cluster-name>
+contexts:
+- context:
+    cluster:  kubernetes
+    user:  kubernetes-admin
+  name: kubernetes-admin@kubernetes
+current-context:  kubernetes-admin@kubernetes
+kind: Config
+preferences: {}
+users:
+- name:  kubernetes-admin
+  user:
+    token: <secret-token-here>
+#________________________________________________
+
+# root@-master:~# adduser Aamir
+#               < give password >
+
+# root@-master:~# su - Aamir
+# Aamir@-master:~#
+#                  this 'Aamir' user executing the commnand  'kubectl get nodes'
+
+# Aamir@-master:~# kubectl get nodes
+# Result--->   permisssion error
+
+
+#  Basically we have 2 sets of permissions :---
+
+# 1 --  Authentication :- ( identity   )  " who can enter into my cluster "  OR  " checking the identity of the user, whether the user is valid or not "
+
+# 1 --  Authorizations :- ( Permissions ) "once the person has logged in , what the person can do ? "  - Authorizations is maintain by RBAC.
+
+
+# -----> for Authentication ::--- x-509 , LDAP , IAM 
+# -----> for Authorizations ::--- RBAC
+
+#   to check _--_>  $ kubectl auth can-i get nodes ,, kubectl auth can-i create ns ,, kubectl auth can-i delete ns ,, kubectl auth can-i  "*" "*"
+#     RESULT _--_>   yes
+
+# we have to create cirtifications, so we need to generate some x-509 cirtificate to 'Aamir' user
+
+# root@-master:~#   mkdir Aamir          cd  ------> Aamir
+# root@-master:~Aamir# cp  /etc/kubernetes/pki/ca.crt .
+# root@-master:~Aamir# cp  /etc/kubernetes/pki/ca.key .
+# root@-master:~Aamir# ls                ------> ca.crt  ca.key
+
+
+# Note :-- to create x509 cirtificate to 'Aamir' we need those two files ' ca.crt  ca.key '
+
+
+# Generate a ca.key with 2048bit :-------------
+# root@-master:~Aamir#  openssl genrsa -out Aamir.key 2048               (user: Aamir)
+# root@-master:~Aamir# ls                ------>    ca.crt , ca.key , Aamir.key 
+
+
+# According to the Aamir.key generate a ca.crt :-------------
+# root@-master:~Aamir#  openssl req  -new  -key  Aamir.key  -out  Aamir.crt
+# Give  common name ( eg. server FQDN or YOUR name ) []:Aamir         ----------------- only give this here
+
+# root@-master:~Aamir# ls                ------>    ca.crt , ca.key , Aamir.key , Aamir.csr 
+
+
+
+# NOTE :-- to generate  x509 cirtificate to 'Aamir' user
+
+# root@-master:~Aamir# openssl x509  -req  -in Aamir.csr  -CA ca.crt -CAkey ca.key -CA createserial -out Aamir.crt -days 365
+
+# root@-master:~Aamir# ls             ------>    ca.crt , ca.key , Aamir.key , Aamir.csr , Aamir.crt , ca.srl
+
+# root@-master:~Aamir# file Aamir.crt
+# RESULT ;----> Aamir.crt: PEM certificate
+
+# root@-master:~Aamir# cat Aamir.crt     ( show certificate )
+
+# root@-master:~Aamir# rm -rf Aamir.csr  ca.crt  ca.key  ca.srl
+
+# root@-master:~Aamir# ls         ------>  Aamir.crt  , Aamir.key
+
+# NOTE :--  now copy this file
+# root@-master:~Aamir# cp  /root/.kube/config . 
+
+# root@-master:~Aamir# ls       ------> Aamir.crt  , Aamir.key , config
+
+# root@-master:~Aamir# vi config
+
+#________________________________________________
+
+# BY google.com
+---
+apiVersion:   v1
+clusters:
+- cluster:
+    certificate-authority-data: <ca-data-here>
+    server: https://172.98.32.203:66663
+  name: <cluster-name>
+contexts:
+- context:
+    cluster:  kubernetes
+    user:  Aamir
+  name: Aamir
+current-context:  Aamir-context
+kind: Config
+preferences: {}
+users:
+- name:  Aamir
+  user:
+      client-certificate-data:   # remove contenrt
+      client-key-data:           # remove contenrt
+...    
+#________________________________________________
+
+
+# root@-master:~Aamir# ls       ------> Aamir.crt  , Aamir.key , config
+
+# root@-master:~Aamir# cat  Aamir.crt  |  base64  -w0
+# RESULT  --->   < copy whole content >
+
+
+# vi config 
+#________________________________________________
+
+# BY google.com
+---
+apiVersion:   v1
+clusters:
+- cluster:
+    certificate-authority-data: <ca-data-here>
+    server: https://172.98.32.203:66663
+  name: <cluster-name>
+contexts:
+- context:
+    cluster:  kubernetes
+    user:  Aamir
+  name: Aamir
+current-context:  Aamir-context
+kind: Config
+preferences: {}
+users:
+- name:  Aamir
+  user:
+      client-certificate-data:   # paste here  < copy whole content >
+      client-key-data:           # remove contenrt
+...    
+#________________________________________________
+
+
+
+# root@-master:~Aamir# ls       ------> Aamir.crt  , Aamir.key , config
+
+# root@-master:~Aamir# cat  Aamir.key  |  base64  -w0
+# RESULT  --->   < copy whole content >
+
+
+# vi config 
+#________________________________________________
+
+# BY google.com
+---
+apiVersion:   v1
+clusters:
+- cluster:
+    certificate-authority-data: <ca-data-here>
+    server: https://172.98.32.203:66663
+  name: <cluster-name>
+contexts:
+- context:
+    cluster:  kubernetes
+    user:  Aamir
+  name: Aamir
+current-context:  Aamir-context
+kind: Config
+preferences: {}
+users:
+- name:  Aamir
+  user:
+      client-certificate-data:   # paste here  < copy whole content >
+      client-key-data:           # paste here  < copy whole content >
+...    
+#________________________________________________
+
+# root@-master:~Aamir# ls        ------> Aamir.crt  , Aamir.key , config
+
+# root@-master:~Aamir# su - Aamir
+
+# Aamir@-master:~# pwd           ------> /home/Aamir
+
+# Aamir@-master:~# exit 
+
+# root@-master:~Aamir#  cp config  /home/Aamir
+
+# root@-master:~Aamir#   chown Aamir:Aamir   /home/Aamir/config 
+
+# root@-master:~Aamir#  su - Aamir
+
+# Aamir@-master:~# ls     ------> config 
+
+# Aamir@-master:~#  mkdir .kube
+# Aamir@-master:~#  chmod -R 777 .kube
+# Aamir@-master:~#  mv config .kube/
+# Aamir@-master:~#  ls -l             -------> 0
+# Aamir@-master:~# cd .kube/         ls --------> config  
+# Aamir@-master:~/.kube$  kubectl get nodes
+# Result --- >  Error forbidden : node is forbidden ; user "Aamir" caanot list resource   at the cluster stagr. 
+
+# NOTE:-----  { NOW AT THIS STAGE WE HAVE DONE "authentications" } 
+
+              { Now we have to do               "authorizations"}
+
+   Authorizations is maintain by RBAC
+
+   NOTE :- we have two types of Roles.
+
+    1- cluster-role
+
+        a- cluster-admin:-    if attach this role, that person will have Root Access.
+        b- self-provisioner:- user with this role can create namespace and delte them.
+
+    2- Project / Local role
+
+       a- view:-  person with this role can see all resources inside a namespace.
+       b- edit:-  person with this role can create , delete , modify , patch the resources, but the person cant give someone elsw permission
+                  on the namespace and cant even manage the quota and limits.
+       c- admin:- person with this role can do anything with that namespace  
+
+
+   NOTE :- we have two types of Roles-Binding. 
+
+   1- Cluster-Role           ===  attached  ===  user gets  ===  Cluster-Role  
+
+   2- Project / Local role   ===  attached  ===  user gets  ===  Roles-Binding
+
+
+# Aamir@-master:~/.kube$ exit 
+
+# root@-master:~#  kubectl create clusterrolebinding --help | less
+
+# root@-master:~#  kubectl create clusterrolebinding Aamir1 --clusterrole=cluster-admin --user=Aamir     ( cluster=admin )
+# RESULT :-- clusterrolebinding.rbac.authorization.k8s.io/Aamir1 created.
+
+# Aamir@-master:~# kubectl get node 
+# RESULT ---> showing all nodes
+
+# root@-master:~#  kubectl delete clusterrolebinding Aamir1                 (for delete, user will dont execute commands )
+
+# root@-master:~# kubectl get clusterrolebinding                            (see our user 'Aamir' has which role ) ClusterRole/cluster-admin
+
+# root@-master:~# kubectl describe clusterrole cluster-admin                ( see 'cluster-admin'  ( * ) all  permission )
+
+# root@-master:~# kubectl describe clusterrole view           (any user hes given to view, he can only do operation like, get,list,watch,)
+
+# root@-master:~# kubectl describe clusterrole edit           ( create, delete, deletecollections, patch up)
+
+# root@-master:~# kubectl describe clusterrole admin
+
+# root@-master:~# kubectl create namespace myns
+
+# root@-master:~# kubectl get all -n myns
+
+# root@-master:~# kubectl create deployment nginx --image=nginx -n myns
+
+# Aamir@-master:~# kubectl get all -n myns
+RESULT -----> shwing errror
+
+# root@-master:~#  kubectl create rolebinding --help | less
+
+# root@-master:~#  kubectl create rolebinding Aamir1 --clusterrole=view --user=Aamir -n myns
+
+# root@-master:~# kubectl get rolebinding -n myns
+
+# root@-master:~# kubectl edit deployment nginx  -n myns
+
+# Aamir@-master:~# kubectl delete rolebinding Aamir1 -n myns
+
+# Aamir@-master:~# kubectl create rolebinding Aamir1 --clusterrole=edit --user=Aamir -n myns
+
+# Aamir@-master:~#

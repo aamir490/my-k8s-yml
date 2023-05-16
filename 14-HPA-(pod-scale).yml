@@ -1,0 +1,157 @@
+#      - Horizontal Pod Scaler  (HPA)  - 
+
+# HPA ;- HPA will adjust no of replicas(pods) automatically for a given Deployment/RS/RC  based on thr observerd  CPU/Memory utilization of pods container.  
+# auto scaling of pods based on observerd CPU and Memory utilzations.
+
+# HPA requires Metrics(Data)
+#  (METRIC SERVER is require )
+# kubectl top nodes  
+# kubectl top pods              ( check loads , current utilizations on pods )
+
+# kubectl run -i -t LOADgenerator --rm --image=busybox /bin/bash    { temporary pod }  (inside container)
+
+# Q :-  wht is Metric Server in k8s??
+# A :- metric server is an applicationswhich is going to gather metrics ( resource metric ) by talking to the kubelet in each node.these availale for API
+
+# kubectl get pods -A
+
+
+# DOWNLOAD  METRIC SERVER
+
+# wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml -O metrics-server-components.yaml
+# after download check  “” metrics-server-components.yaml”” this file
+# 1 ls  metrics-server-components.yaml
+# Go to inside this
+# 2  vi lmetrics-server-components.yaml
+#    Add certificate in DEPLOYMENTS → container → CIRTIFICATION  in line no3
+#          - --cert-dir=/tmp
+#         - --secure-port=4443
+#           --kubelet-insecure-tls               (<------certificate)
+#         - --kubelet-preferred-ad
+# 3 kubectl apply -f  lmetrics-server-components.yaml
+# 4 kubectl get pods
+# 5 kubectl get namespaces                             (kube-system)
+# 6 kubectl get pods -n kube-system       (lmetrics-server-components) serve runing
+
+# 7 kubectl logs -f <matric server name> -n kube-system   (showing info)
+
+# 8 vi deployhpa.yml            # <----------- create deploymnet 
+# 9 kubectl apply -f deployhpa.yml
+
+# 10 kubectl get all
+
+# Node :: Paste hpa commad here
+# 11 kubectl autoscale deployment mydeploy --cpu-percent=20 --min=1 --max=10
+# (horizontalpodautoscaler.autoscaling/mydeploy autoscaled)
+
+# 12 kubectl get all     (  horizontalpodautoscaler.autoscaling/mydeploy )       running
+
+# Open new terminal with new colour 
+# 13 kubectl get pods
+# 14 kubectl exec  <pod name> -it -- /bin/bash
+# Go to previous terminal and type 
+# 15 watch kubectl get all
+# 15 kubectl get all 
+# 16 open coloured terminal and 
+# Updattttte u see load increase 
+
+# FOR DEPLOYHPA.YML
+#########vi deployhpa.yml 
+
+#------------------------  mithun k8s HPA --------------------------------------------------------------------------
+--- # create ReplicaSet
+kind: ReplicaSet
+apiVersion: apps/v1
+metadata:
+   name: my-RC-hpa # ------ ReplicaSet-name  {scaleTargetRef} 
+spec:
+   selector:
+     matchLabels:
+       app: hpa-RC  # ---- selector-name  
+   template:
+     metadata:
+       name: test-pod # ----- pod-name
+       labels:
+         name: hpa-RC # ---- selector-name
+     spec:
+      containers:
+        - name: cont-0 # -----  container-name
+          image: httpd
+          ports:
+          - containerPort: 8080
+          resources:
+            limits:
+              cpu: 500m   #(1000m = 1core)
+              memory: 512Mi
+            requests:
+              cpu: 200m
+              memory: 256Mi
+... 
+
+--- # create HPA for Deployment
+apiVersion: autoscaling/v2   # autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpadeployment
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: ReplicaSet
+    name:  my-RC-hpa # ------ ReplicaSet-name {scaleTargetRef}
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+
+#------------------------  mithun k8s HPA --------------------------------------------------------------------------
+
+
+
+#    RollingUpdate type Deployment
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: 1st-deploy
+  labels:            
+    appname: my-deploy
+spec:    
+  replicas: 5
+  strategy:
+    type: RollingUpdate  # 1 new pod create & 1 old pod down & delete { achive zero down time }
+    rollingUpdate: 
+      maxSurge: 0  # --- when updating the Deployment. how many new version of pod can be created. # when new RS ceating then previous RS's 1 pod delete.
+      maxUnavailable: 2  # --- when updating the Deployment. maxim how many pods can be unavailable.
+  minReadySeconds: 60  # -- new pod created. ater '60s' old version of pod will be deleted. 
+  selector:
+    matchLabels:       # <map[string]string>
+      app: myapp
+  template:
+    metadata:
+      name: dpod
+      labels:            # label of pods
+        app: myapp
+    spec:     # this is for pod
+     containers:
+       - name: container
+         image: coolgourav147/nginx-custom:v2
+         resources:
+            requests:     # --- MINIMUM value of PODS
+              memory: "100Mi"  
+              cpu: "100m"
+            limits:       # --- MAXIMUM value of PODS
+              memory: "200Mi"  
+              cpu: "500m"
+...      

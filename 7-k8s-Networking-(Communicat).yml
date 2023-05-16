@@ -1,0 +1,98 @@
+#-----------------------------------------------------------------------------------------------------
+
+#                    - ( container to container )  communication on same Pods -
+--- # vi pod1.yml 
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod   #-----> pod name
+spec:
+  containers:
+    - name: c00    # con-1
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+    - name: c01    # con-2
+      image: httpd
+      ports:
+       - containerPort: 80
+...       
+
+# ----------------------------------------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------------------------------------
+
+# **** **********    ( pod  to pod  ) communication on same Node     *****************
+
+# -------- $$$$$$$   for  vi pod2.yml
+
+--- # vi pod2.yml
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod1
+spec:
+  containers:
+    - name: c01
+      image: nginx   # ---- image
+      ports:
+       - containerPort: 80
+...       
+
+
+ # -------- $$$$$$$   for vi pod3.yml
+
+--- # vi pod3.yml
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod4
+spec:
+  containers:
+    - name: c03
+      image: httpd  # ---- image
+      ports: 
+       - containerPort: 80
+...       
+
+# ----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+################### MITHUN ###################################################################
+
+#                    - ( container to container )  communication on same Pods -
+--- # vi pod1.yml 
+ 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testpod   #-----> pod name
+  labels:
+    app: javawebapp
+spec:
+  containers:
+    - name: c00    # con-1
+      image: ubuntu
+      ports:
+        - containerPort: 8080      
+    - name: c01    # con-2
+      image: httpd
+      ports:
+       - containerPort: 80
+...    
+
+
+
+
+
+
+
+
+
+
+
+

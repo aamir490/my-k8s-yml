@@ -1,0 +1,552 @@
+#############################################################
+#                    -  R E S O U R C E S   -  
+#############################################################
+#__________________________________________________________________
+
+|------------------------------------------------|
+|
+|     1 core cpu  == 1000 milli cpu              |
+| 
+| eg: 4 core cpu  == 4000 milli cpu              |
+|
+|----------------------------------------------- |
+|for MEMORY:-   KB  OR    KBi
+|               GB  OR    GBi                    |
+|               MB  OR    MBi
+|                                                |
+|
+| 1 KB == 1000 bytes ,,,  1 KBi == 1024 bytes    |
+|  
+| 1 MB == 1000 KB    ,,,  1 MBi == 1024 KBi      |
+|
+| 1 GB == 1000 MB    ,,,  1 GBi == 1024 MBi      |
+|
+|------------------------------------------------|      
+#__________________________________________________________________
+
+#------------------------------------------------------------------------------------------------------------------------------
+
+#  we are creat a pod with  {  requests   &  limit   }
+
+--- # T G      poderesources.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resources    # --- pod name  
+spec:
+  containers:
+  - name: resource
+    image: centos
+    command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+    resources:        ## ---- Request & Limit                                     
+      requests:    # --------------------------------REQUEST
+        memory: "64Mi"
+        cpu: "100m"
+      limits:      # --------------------------------MAX LIMITS  { LIMITS >> REQUESTS } { LIMITS Always maximum & equal to REQUEST  }
+        memory: "128Mi"
+        cpu: "200m"        ## limit hameha zyda hogi requst se
+...   
+     
+# 1 vi poderesources.yml
+# 2 kubectl apply -f poderesources.yml                                     (  pod/resources created)
+
+#   No imp : check which namespace currently are  you working ? 
+# 3  kubectl config view | grep namespace:                                  (check which Nmaespace are uworking )          
+# 4  kubectl get pods                                                      ( resources   1/1     Running)
+# 5  kubectl describe pods resources                                        ( resource= pod name)  ( showing limit and request )
+# 6  kubectl delete -f  poderesources.yml  
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+#  | vi resourcequota.yml |        R E S O U R C E - Q U O T A          
+
+
+# -------------------------------------------------------------------------------------------------------
+
+# NOTE :--     RESOURCE QUOTA is always set to the Namespace    
+
+--- # we define resource quota 
+apiVersion: v1
+kind: ResourceQuota   # ------- object is  ' ResourceQuota '
+metadata:
+   name: myquota  # ---- name of   ' ResourceQuota '
+spec:
+  hard:
+    limits.cpu: "400m"   # --- total
+    limits.memory: "400Mi"
+    requests.cpu: "200m"
+    requests.memory: "200Mi"
+...   
+
+
+# CEATE POD for ResourceQuota -----------
+
+--- # CEATE POD
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: deployments
+spec:
+  replicas: 3 # ---- 3 replica 
+  selector:      
+    matchLabels:
+     objtype: deployment
+  template:
+    metadata:
+      name: testpod8
+      labels:
+        objtype: deployment
+    spec:
+     containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo hello-aamir; sleep 5 ; done"]
+         resources:
+            requests:     # ----------- REQUEST { here ,, we only define request not limit }
+              cpu: "200m"     # "400m" total    & 3 replica   
+
+#   scheduling failed due  to low resource ...              
+
+#--------------------------------------------------------------------------------------------------------
+
+#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+##############################################
+#       rajesh k8s-9    
+##############################################
+#--------------------------------------------------------------------------------
+--- # vi project-1-quota.yml
+apiVersion: v1
+kind: ResourceQuota       # --- object is ResourceQuota
+metadata:
+  name: project-1-quota  # --- POD  name
+  namespace: project-1   # --- RQ for project-1 namespace
+spec:
+  hard:
+    pods: "3"   # ----- only 3 pod create
+    configmaps: "10"
+    secrets: "10"
+    services: "10"
+    persistentvolumeclaims: "50"
+    limits.memory: "800Mi" #-- 800 MB
+    limits.cpu: "10"       #-- 1O CORES
+... 
+
+--- # vi pod-quota.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-server
+  namespace: project-1
+spec:
+  containers:
+  - name: web-server
+    image: nginx
+    resources:
+      limits:
+        memory: "300Mi" # 300mb
+        cpu: "0.5"
+...     
+#--------------------------------------------------------------------------------
+
+# vi cpudefault.yml
+--- # 
+apiVersion: v1
+kind: LimitRange  # ----- hm limit define kr rah hain.
+metadata:
+  name: cpu-limit-range  # -- NAME
+spec:
+  limits:
+   - default: 
+       cpu: 1
+     defaultRequest: 
+       cpu: 0.5 
+     type: Container
+...         
+
+######     vi limit-cpu-container.yml
+
+--- # vi limit-cpu-container.yml
+apiVersion: v1
+kind: LimitRange  # ----- hm limit define kr rah hain.
+metadata:
+  name: limit-mem-cpu-per-container  # -- NAME
+spec:
+  limits:
+    - max:
+        cpu: "800m"
+        memory: "1Gi"
+      min:
+        cpu: "100m"
+        memory: "99Mi"  
+      default:    # --default - MAX
+        cpu: "700m"
+        memory: "900Mi"
+      defaultRequest:  # --default - MIN
+        cpu: "110m"
+        memory: "111Mi"
+      type: Container   #---  set limit for CONTAINER
+
+
+# kubectl apply -f limit-cpu-container.yml
+# kubectl get limitrange
+# kubectl describe limitrange limit-cpu-container
+
+#;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+# @ @ @    creat pod and container and set limit 
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox1111
+spec:
+  containers:
+    - name: busybox1-cnt01
+      image: busybox
+      command: ["/bin/sh"]
+      args: ["-c", "while true; do echo HELLO AAMIR-IMRAN-AHMED; sleep 10 ; done"]
+      resources:
+        requests:     # --- MINIMUM value of container
+           memory: "100Mi"  # 100 Mb
+           cpu: "100m"      # 100 milli
+        limits:       # --- MAXIMUM value of container
+           memory: "200Mi"  
+           cpu: "500m" 
+...           
+  
+
+#--------------------------------------------------------------
+
+--- # limit-mem-cpu-pod.yml
+apiVersion: v1
+kind: LimitRange  # ----- hm limit define kr rah hain.
+metadata:
+  name: limit-mem-cpu-per-pods
+spec:
+  limits:
+  - max:
+      cpu: "2"
+      memory: "2Gi"
+    type: Pod
+...    
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox1111
+spec:
+  containers:
+    - name: busybox1-cnt01
+      image: busybox
+      command: ["/bin/sh"]
+      args: ["-c", "while true; do echo HELLO AAMIR-IMRAN-AHMED; sleep 10 ; done"]
+      resources:
+        requests:     # --- MINIMUM value of container
+           memory: "100Mi"  
+           cpu: "100m"
+        limits:       # --- MAXIMUM value of container
+           memory: "200Mi"  
+           cpu: "500m" 
+... 
+#--------------------------------------------------------------------------
+
+
+# &&&&&&&&&&&&&&&&&&&&
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+   name: myquota
+spec:
+  hard:
+    requests.cpu: 0.5
+    requests.memory: 500Mi
+    limits.cpu: 1
+    limits.memory: 1Gi
+...    
+
+
+__________________________________________________________________
+
+-------------------------------------------------|
+|
+| 1 core cpu  == 1000 milli cpu                  |
+| 
+| 4 core cpu  == 4000 milli cpu                  |
+|
+|----------------------------------------------- |
+|for MEMORY:-   KB  OR    KBi
+|               GB  OR    GBi                    |
+|               MB  OR    MBi
+|                                                |
+|
+| 1 KB == 1000 bytes ,,,  1 KBi == 1024 bytes    |
+|  
+| 1 MB == 1000 KB    ,,,  1 MBi == 1024 KBi      |
+|
+| 1 GB == 1000 MB    ,,,  1 GBi == 1024 MBi      |
+|
+|------------------------------------------------|      
+__________________________________________________________________
+
+
+
+
+
+ 
+
+
+
+Now  if u apply limit but not request-------------
+
+
+
+apiVersion: v1
+kind: LimitRange  # ----- hm limit define kr rah hain.
+metadata:
+  name: cpu-limit-range
+spec:
+  limits:
+  - default:
+      cpu: 1
+    defaultRequest:
+      cpu: 0.5
+    type: Container
+
+
+
+
+WE APPLY LIMIT-----------------------------
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default-cpu-demo-2
+spec:
+  containers:
+  - name: default-cpu-demo-2-ctr
+    image: nginx
+    resources:
+      limits:
+        cpu: "1"
+
+
+
+
+
+
+If we apply REQEUST  but not LIMIT --------------------------------
+
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default-cpu-demo-3
+spec:
+  containers:
+  - name: default-cpu-demo-3-ctr
+    image: nginx
+    resources:
+      requests:
+        cpu: "0.75"
+
+
+
+
+**************************  MEMDEFAULT.YML   ( for  memory  ) ************************
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mem-min-max-demo-lr
+spec:
+  limits:
+  - max:
+      memory: 1Gi
+    min:
+      memory: 500Mi
+    type: Container
+
+
+
+
+
+for meme1.yml------------------------------
+
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: constraints-mem-demo
+spec:
+  containers:
+  - name: constraints-mem-demo-ctr
+    image: nginx
+    resources:
+      limits:
+        memory: "800Mi"
+      requests:
+        memory: "600Mi"
+
+
+#    ****************     RESOURCE QUOTA    ***********************
+
+#  NOTE:: ----------  RESOURCE QUOTA is always set to the Namespace. ------------
+
+#         Limt range is only applicabe for  {PODS ,, CONTAINERS ,, STRORAGE}.
+
+# 'Resource at the container level'  &  'ResourceQuota at the Namespace level'
+
+#  using ResourceQuota we can limit the resource consumeptions per namespace.
+
+# NOW WE CREATE NAMESPACE  'testns' :---
+# kubectl create ns testns   
+# kubectl get namespace
+# kubectl get all -n testns 
+# kubectl get quota -n testns
+# kubectl get resoucequota -n testns     
+# kubectl get rs 
+# kubectl get rs  my-rs -n testns   
+# kubectl ge events -n testns           ( showing what happend )                      
+
+#------------------------------------------------------------------------------------------------------------------------
+# -------- $$$$$$$$$$$ 'RESOURCE QUOTA'
+# -------- { we create  resource quota  and  limitrange }   &    {  now we create  Replicaset  and service}    
+# vi myresource-quota-limit-range.yml
+---
+apiVersion: v1
+kind: ResourceQuota   # ------- object is 'ResourceQuota'
+metadata:
+   name: myquota  # ---- name of 'ResourceQuota'
+   namespace: testns    # ----  'ResourceQuota' create in  'testns' namespace.
+spec:
+  hard:
+    requests.cpu: "500m"
+    requests.memory: 512Mi # complete namespce max resource req.mem
+    limits.cpu: "1"
+    limits.memory: 1Gi
+    pods: 2
+
+...    
+
+# -------- $$$$$$$$$$$ 'LimitRange'  ( default kind of limits and request )
+
+---
+apiVersion: v1
+kind: LimitRange  # ----- we are defining limits and request by 'LimitRange' oject.
+metadata:
+  name: cpu-limit-range
+  namespace: testns
+spec:
+  limits:
+    - default:
+        cpu: 500m 
+        memory: 512Mi
+      defaultRequest: 
+        cpu: 100m
+        memory: 256Mi
+      type: Container  
+... 
+ 
+#------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#-------------------------------------------------------------------------------------------------------------------------------
+# -------------- &&&&&&&&&&&&&    ' ReplicaSet '
+# -------- { we create  resource quota  and  limitrange }   &    { now we create  Replicaset  and service}    
+# vi replicaSet-service.yml
+---
+kind: ReplicaSet
+apiVersion: apps/v1
+metadata:
+  name: my-rs   #   name of RS
+  namespace: testns   # -- if your namespace already exsist  & u want to create pod in ''testn''  // create " testns "  
+spec:   
+  replicas: 2
+  selector:  # ----------  Rs support  (set based   &  equality based selector ) ( Mandetory )
+    matchLabels:    # ---- in RS use this..( Equality )      # <map[string]string>
+      app: myapp    #--$$$$
+  template:  # ---- pod info
+    metadata:
+      name: my-pod
+      labels:            # ---- label of pods
+        app: myapp #--$$$$
+    spec:     # -----  this is for pod
+     containers:
+        - name: container1
+          image: coolgourav147/nginx-custom
+          ports:
+           - containerPort: 8080
+...  
+
+# -------- $$$$$$$$$$$  ' Service '      too  for outside & inside  communications.   { OPTIONAL } 
+
+---
+kind: Service    
+apiVersion: v1
+metadata:
+  name: my-svc  # ----- service name
+  namespace: testns # -- if your namespace already exsist  & uwant to create pod in ''testn''
+spec:
+  type: NodePort   #--- Specifies the service type   i.e:-  ClusterIP(inside)  or  NodePort(outside)
+  selector:
+    app: myapp #--$$$$ #---- Apply this service to any pods which has the specific label
+  ports:
+    - port: 80        # service port     Containers port exposed
+      targetPort: 8080     # container's port   
+...
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+   name: myquota
+spec:
+  hard:
+    requests.cpu: 0.5
+    requests.memory: 500Mi
+    limits.cpu: 1
+    limits.memory: 1Gi
+...    
+
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resources    # --- pod name  
+spec:
+  containers:
+  - name: resource
+    image: centos
+    command: ["/bin/bash", "-c", "while true; do echo Technical-Guftgu; sleep 5 ; done"]
+    resources:        ## ---- Request & Limit                                     
+      requests:    # --------------------------------REQUEST
+        memory: "64Mi"
+        cpu: "100m"
+      limits:      # --------------------------------MAX LIMITS    { LIMITS >> REQUESTS }
+        memory: "128Mi"
+        cpu: "200m"        ## limit hameha zyda hogi requst se
+...

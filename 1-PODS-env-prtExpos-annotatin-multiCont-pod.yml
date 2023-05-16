@@ -1,0 +1,313 @@
+#############################################################
+ #                 ***  DEVOPS  **** TG - LEC-48   
+#############################################################
+
+#|||||||||||||||||||||||||||                            
+#  a           apiVersion: 
+#  k           kind:                
+#  m           metadata:                                      
+#  s           spec:
+#|||||||||||||||||||||||||||         
+
+  
+# ---------------------------------------------------------------------------------------------------------------------------------
+#                                    - vi pod1.yml  - BASIC-pods  - 
+#  vi pod1.yml   ( basic-pod ) 
+
+--- # BASIC-pods
+                                    
+  containers:                      
+    - name: c00   # --- container name                  
+      image: ubuntu              
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+  restartPolicy: Never         # Defaults to Always
+...
+
+#  (FOR REFERENCE MANIFEST)
+#  kubectl api-resources
+
+#  vi pod1.yml                                                (for creat 1st POD, description box  script copy in  VI editor)
+#  kubectl apply -f pod1.yml --dry-run                          # same FOR DRY RUN ( aftr pasting script in VI apply this yml file)  
+#  kubectl apply --dry-run -f pod1.yml                          # same FOR DRY RUN
+#  kubectl apply -f  pod1.yml  --dry-run=client                 # same FOR DRY RUN ( validate kubectl locally )
+#  kubectl apply -f  pod1.yml  --dry-run=server                 # same FOR DRY RUN ( API server validate )
+
+#  kubectl create -f pod1.yml 
+#  kubectl apply -f pod1.yml     
+
+'''
+kubectl apply -f pod1.yml   --->  pod/test-pod created
+kubectl apply -f pod1.yml   --->  pod/test-pod unchanged
+kubectl create -f pod1.yml  --->  Error from server (AlreadyExists): error when creating  pod1.yml 
+kubectl update -f pod1.yml  --->
+
+Kubectl run nginx --image=nginx      #----> POD with name "nginx" & pod will have only "1" container , nginx:latest  (imerative method)
+
+'''
+
+#  kubectl get pods                                             ( checking pods run or not) {NAME, READY, STATUS , RESTART , AGE}
+#  kubectl get pods -o wide                                     { NAME, READY, STATUS , RESTART , AGE , IP , NODE  NOMINATED NODE} 
+#  kubectl get all                                              ( showing all pods , service , rs  ,rc  { showing all object }) 
+
+#  kubectl describe pod testpod                            ( full detils like IP, events pods, labels ,ready,environment , descriptions )
+#  kubectl describe pod testpod |less                    
+
+#  kubectl get pods testpod -o yml
+
+#  kubectl logs -f testpod                                       ( full container details inside )  CTRL + z    --- exit
+#  kubectl logs -f testpod -c c00
+
+#  kubectl exec testpod -c c00 -- hostname -i                     (for PODS ip ) 
+#  kubectl exec testpod -it -c c00 -- /bin/bash                   ( u r inside container  { # ps //  # ps -ef } )
+
+#  kubectl get endpoint                                           ( for showing ENDpoint )
+#  kubectl get pods -w                                            ( watch pods)  
+
+#  kubectl delete pod testpod                                     ( for deleting pod )  
+#  kubectl delete -f pod1.yml                                     ( delete pod      through   .yml file)
+  
+#----------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+#---------------------------------------------------------------------------------------
+--- # BASIC-pods by Rajesh
+
+apiVersion: v1 
+kind: Pod   # ---- Object type                                               
+metadata:
+  #namespace: test-ns                          
+  name: Hello-pod  # ----  pod name 
+  labels:
+    app:  Hello-pod       # --- label name     
+spec:                                    
+  containers:                      
+    - name: web   # --- container name                  
+      image: nginx              
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+      ports:
+        - name: web
+          containerPort: 80
+          protocol: TCP
+...
+#-----------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------------
+#                                            - vi pod2.yml  -  Annotations  - 
+--- # basic-pods with annotations
+kind: Pod                              
+apiVersion: v1                     
+metadata:                           
+  name: testpod     # ----  pod name  
+  annotations: 
+     description : our-first-pod   # --- annotate        
+spec:                                    
+  containers:                      
+    - name: c00          # --- container name               
+      image: ubuntu              
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+  restartPolicy: Never         # Defaults to Always
+...  
+#----------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------------
+#                                  -    vi pod3.yml  -  MULTI CONTAINER POD ENVIRONMENT  ( Side Car Container )-  
+--- # multi container pod 
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-for3container   # --- pod name   
+spec:
+  containers:
+    - name: c00    # --- container-1
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+    - name: c01    # --- container-2
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+    - name: c03    # --- container-3
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+...      
+
+
+
+# ---------- $$$$$$$$$$  multi container / environment pod  - Gaurav 
+
+--- # multi container / environment pod - Gaurav 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-container             # --- pod name 
+  labels:
+    type1: www        # --- label name 
+spec:
+  containers:
+    - name: c1  # --- container-1
+      image: coolgourav147/nginx-custom  # ---- gaurav image ::  ( aamir490/node-app-js:1 ) my image                                                                 
+      env:
+        - name: myname
+          value: aammiirr
+      args: ["sleep","3600"]
+    - name: c2  # --- container-2
+      image: aamir490/node-app-js:1  # ---- my image
+...      
+
+
+##  for going inside container $ check type 'env'  #  kubectl exec multicontainer -it -c c1 -- /bin/bash
+                                                   #  kubectl exec testpod12 -c c1 env
+
+#-------------$$$$$$$$  multicontainer-pod
+
+--- # multi container pod 
+kind: Pod                              
+apiVersion: v1                     
+metadata:                           
+  name: multicontainer-pod     # ----  pod name 
+spec:
+  containers:
+    - name: 1st  # --- container-1
+      image: nginx
+      args: ["sleep","3600"]
+    - name: 2nd # --- container-2
+      image: nginx 
+... 
+
+# NOTE : -- in our case two containers [ 1st , 2nd ] are running in one pod. if you want to inside the container.
+
+# kubectl exec -it multicontainer-pod -- /bin/bash   ----> you go 1st container always but in pdd 2 containers are running.
+
+# kubectl exec -it multicontainer-pod -c 1st  -- /bin/bash
+
+
+NOTE :- if multiple container and with name space
+# kubectl exec -it multicontainer-pod -n test-ns -c 2nd  -- /bin/bash
+
+
+
+#  [root@-2nd#\]$ netstat -tulpn            ( cheking which port expose in our container)
+
+# NOTE :-- we are going to expose port ...
+
+#  [root@-2nd#\]$ apt-get install netcat   
+
+#  [root@-2nd#\]$ netcat -l -p 3306 
+
+#  [root@-2nd#\]$ telnet localhost 3306
+#----------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------------
+#                                  - vi pode4.yml   - POD ENVIRONMENT VARIABLES  -   
+--- # POD ENVIRONMENT VARIABLES
+kind: Pod
+apiVersion: v1
+metadata:
+  name:  testpod12 # --- pod name 
+spec:
+  containers:
+    - name: c00
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+      env:            # ---------List of environment variables to be used inside the pod
+      - name: MYNAME
+        value: aammiirr
+...   
+
+ ##  for going inside container &  type   'env'           #  kubectl exec testpod12 -it -c c1 -- /bin/bash
+                                                          #  kubectl exec testpod12 -c c1 env
+                                                          #  echo $MYNAME
+
+
+
+# ---------- $$$$$$$$$$ env , label , namespace , $$$$$
+--- #  env , label , namespace 
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod12  # --- pod name 
+  namespace: testns #----------------- we creat namespace 
+  labels:
+    apps: new-app  # --- pod labels name 
+spec:
+  containers:
+    - name: c1
+      image: nginx
+      env:
+        - name: myname
+          value: aammiirr
+...  
+
+#----------------------------------------------------------------------------------------------------------------------------------
+   
+#----------------------------------------------------------------------------------------------------------------------------------
+#                        - vi pode4.yml   -     script  for  port expose
+--- # script  for  port expose
+kind: Pod
+apiVersion: v1
+metadata:
+   name: test-pod
+   labels:
+      podname: export-pod
+spec:
+  containers:
+    - name: c1
+      image: httpd
+      ports: 
+        - containerPort: 80
+.
+
+--- # port expose run cmnd
+kind: Pod
+apiVersion: v1
+metadata:
+   name: thirrd
+   labels:
+      podname: secondpodlbl
+spec:
+  containers:
+    - name: secondpod
+      image: coolgourav147/nginx-custom  # --- gaurav image
+...
+
+## note :: port expose run cmnd
+  #---->$  kubectl expose pod thirrd --port=8000 --target-port=80 --name my-first-service
+
+#----------------------------------------------------------------------------------------------------------------------------------
+ 
+
+
+
+
+        
+
+ 
+
+
+
+
+
+
+
+

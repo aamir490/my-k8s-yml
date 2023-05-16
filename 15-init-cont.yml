@@ -1,0 +1,75 @@
+
+############################################################
+#               - I N I T    C O N T A I N E R  -
+############################################################
+
+# init container:--  is an additional container in a Pod tht completes a task before the "regular" container is started.
+#                   The regular container will only be started once the init container has been started.
+#                   An init container in a Pod must run and complete before any other application containers in the Pod start.
+
+# always does some kind of prechek actually it means that before the main Pod comes what are the prerequisites is require that
+# has been taken by INIT container.
+
+
+#  vi init-container.yml
+
+--- # init container
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app.kubernetes.io/name: MyApp
+spec:
+  # after ""init container" terminat   ,  this    "container"    start......
+  containers:            
+  - name: myapp-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:  # ----- k8s 1st creat and check init container.
+  - name: init-myservice   #---- 1st ''initcont'''
+    image: busybox:1.28
+    command: ['sh', '-c', "until nslookup myservice.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for myservice; sleep 2; done"]
+  - name: init-mydb        #---- 2nd ''initcont'''
+    image: busybox:1.28
+    command: ['sh', '-c', "until nslookup mydb.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for mydb; sleep 2; done"]
+...
+
+# kubectl apply -f init-container.yml              ( pod/mypod-pod created )
+# kubectl get pod                                  ( main_container:0/1    ,,    init:0/2 ) both are pwnding satate 
+# kubectl describe pod mypod-pod    ( init-myservice  = 1st ''initcont''  -->  running state) (init-mydb = 2nd ''initcont'' --->  waiting state )
+
+# kubectl logs myapp-pod -c init-myservice             ( Inspect the first init container  --  cant resolve my servixe )
+# kubectl logs myapp-pod -c init-mydb                  ( Inspect the second init container --  waiting to start        )
+
+
+
+####  NOTE :--->   Here's a configuration you can use to make those Services (init-myservice , init-mydb) appear:
+
+# vi service.yml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myservice
+spec:
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 9376
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mydb
+spec:
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 9377
+...
+
+# kubectl apply -f services.yaml          ( service/myservice created  ,  service/mydb created )
+
+# kubectl describe pod mypod-pod | less   ( state: terminated ) both service terminated. AND MAIN CONTAINER START......
+

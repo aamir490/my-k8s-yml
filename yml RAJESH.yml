@@ -1,0 +1,154 @@
+######    vi limit-mem-cpu-per-pods.yml
+---
+apiVersion: v1
+kind: LimitRange  # ----- hm limit define kr rah hain.
+metadata:
+  name: limit-mem-cpu-per-pods
+spec:
+  limits:
+  - max:
+      cpu: "2"
+      memory: "2Gi"
+    type: Pod
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+### vi rc.yml
+
+---
+kind: ReplicationController  # --------- kind of  " object "       
+apiVersion: v1
+metadata:
+  name: rc-demo    # -------- name of Replication Controller
+spec:
+  replicas: 3   # ---------------- desired no of PODS.    always 2 POD running
+  selector:
+    team: dev  #$$$$  # must match ""labels""   jis pr ye ''labele'' lga ho us pod ko select krna hai..
+  template:        # ---- template  defines to launch New PODS.
+    metadata:
+      name: rc-demo
+      labels:      # -------- selector value need to match labels  
+        team: dev  #$$$$
+    spec:
+     containers:
+       - name: rc-demo1
+         image: nginx:1.7.1
+         ports:
+           - containerPort: 80
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+##### vi deployment.yml
+
+---
+kind: Deployment   # ------ Deployment 'object'
+apiVersion: apps/v1
+metadata:
+   name: nginx-deployments     # -------- Name of ''Deployment''
+   labels: 
+     app: nginx  # ------- same
+spec:
+   replicas: 3
+   selector:     
+    matchLabels:
+     app: nginx    # ------- same
+   template:
+     metadata:
+       labels:
+         app: nginx  # --------ssame
+     spec:
+       containers:
+         - name: nginx
+           image: nginx:1.7.1
+           ports:
+             - containerPort: 80
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+####
+
+---
+kind: Deployment   # ------ Deployment 'object'
+apiVersion: apps/v1
+metadata:
+   name: nginx-deployments     # -------- Name of ''Deployment''
+   labels: 
+     app: nginx  # ------- same
+spec:
+   replicas: 4
+   strategy:   
+    rollingUpdate:  # ---- Rolling Deployment startegies
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+   selector:     
+    matchLabels:
+     app: nginx    # ------- same
+   template:
+     metadata:
+       labels:
+         app: nginx  # --------ssame
+     spec:
+       containers:
+         - name: nginx
+           image: nginx:1.7.1
+           ports:
+             - containerPort: 80
+
+
+
+
+
+##### recreate strategy
+
+---
+kind: Deployment   # ------ Deployment 'object'
+apiVersion: apps/v1
+metadata:
+   name: nginx-deployments     # -------- Name of ''Deployment''
+   labels:
+     app: nginx  # ------- same
+spec:
+   replicas: 4
+   strategy:
+    type: Recreate
+   selector:
+    matchLabels:
+     app: nginx    # ------- same
+   template:
+     metadata:
+       labels:
+         app: nginx  # --------ssame
+     spec:
+       containers:
+         - name: nginx
+           image: nginx:1.9.1
+           ports:
+             - containerPort: 80
+~
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1606 @@
+#############################################################
+ # ---------   ***  DEVOPS  **** TG - LEC-48  ---------
+#############################################################
+
+# ***  vi pod1.yml    basic.yml    for creating manifest,,create pod,,name of pod *****
+---
+kind: Pod                              
+apiVersion: v1                     
+metadata:                           
+  name: testpod                  
+spec:                                    
+  containers:                      
+    - name: c00                     
+      image: ubuntu              
+      command: ["/bin/bash", "-c", "while true; do echo Hello-Bhupinder; sleep 5 ; done"]
+  restartPolicy: Never         # Defaults to Always
+...
+
+# ---------- $$$$$$$$$$ gaurav script  for  port expose
+---
+kind: Pod
+apiVersion: v1
+metadata:
+   name: thirrd
+   labels:
+      podname: secondpodlbl
+spec:
+  containers:
+    - name: secondpod
+      image: coolgourav147/nginx-custom  # --- gaurav image
+...
+
+## note :: port expose run cmnd
+  #---->$  kubectl expose pod thirrd --port=8000 --target-port=80 --name my-first-service
+ 
+
+# ---------- $$$$$$$$$$ env or lbel $$$$$
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod12
+  labels:
+    type1: www
+spec:
+  containers:
+    - name: c1
+      image: nginx
+      env:
+        - name: myname
+          value: aammiirr
+...          
+
+  ##  for going inside container &  check type   'env' #  kubectl exec testpod12 -it -c c1 -- /bin/bash
+                                                       #  kubectl exec testpod12 -c c1 env
+
+
+# ***********************   vi pod2.yml  -  Annotations  - ********************************
+---
+kind: Pod                              
+apiVersion: v1                     
+metadata:                           
+  name: testpod
+  annotations: 
+     description : our-first-pod                
+spec:                                    
+  containers:                      
+    - name: c00                     
+      image: ubuntu              
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+  restartPolicy: Never         # Defaults to Always
+...  
+
+
+
+# **************    vi pod3.yml  -  MULTI CONTAINER POD ENVIRONMENT  -  ********************** 
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod3
+spec:
+  containers:
+    - name: c00    # --- container-1
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+    - name: c01    # --- container-2
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+    - name: c03    # --- container-3
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+...      
+
+
+
+# ---------- $$$$$$$$$$  multi container
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: multicontainer
+  labels:
+    type1: www
+spec:
+  containers:
+    - name: c1
+      image: coolgourav147/nginx-custom  # ---- gaurav image
+      env:
+        - name: myname
+          value: aammiirr
+      args: ["sleep","3600"]
+    - name: c2
+      image: coolgourav147/nginx-custom  # ---- gaurav image
+...      
+
+
+##  for going inside container $ check type 'env'  #  kubectl exec multicontainer -it -c c1 -- /bin/bash
+                                                   #  kubectl exec testpod12 -c c1 env
+
+
+#-------------------------------------------------------------------------------=
+
+## ------  for finding some thing in  .yml file    eg;; find name in container
+
+# --- $ grep name second.yml
+
+# RESULT
+---
+  name: multicontainer
+    - name: c1
+        - name: myname
+    - name: secondcontainer
+...    
+#-------------------------------------------------------------------------------=
+
+
+# *****************   vi pode4.yml   - POD ENVIRONMENT VARIABLES  -   ********************************
+
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: environments
+spec:
+  containers:
+    - name: c00
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+      env:                        # List of environment variables to be used inside the pod
+      - name: MYNAME
+        value: aammiirr
+...        
+
+
+# ******************************  vi pod5.yml  - POD WITH PORTS -  ******************************
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod4
+spec:
+  containers:
+    - name: c00
+      image: httpd
+      ports:
+       - containerPort: 80
+...
+
+
+#############################################################
+   #------------   ***DEVOPS****  T G  LEC-49   ------------
+#############################################################
+
+
+#*************  EXAMPLE OF LABELS  *************************
+
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: delhipod
+  labels:                                                   
+    env: developments  # --- LABELS 
+    class: pods        # --- LABELS 
+spec:
+    containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+...         
+
+# ---------- $$$$$$$$$$ gaurav script  for  port expose AND LABELS 
+---
+kind: Pod
+apiVersion: v1
+metadata:
+   name: thirrd
+   labels:
+      podname: secondpodlbl
+spec:
+  containers:
+    - name: secondpod
+      image: coolgourav147/nginx-custom  # --- gaurav image
+...
+
+## note :: port expose run cmnd
+#---->$    kubectl expose pod thirrd --port=8000 --target-port=80 --name my-first-service
+ 
+
+# ---------- $$$$$$$$$$ env or lbel $$$$$
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod12
+  labels:
+    type1: www
+spec:
+  containers:
+    - name: c1
+      image: nginx
+      env:
+        - name: myname
+          value: aammiirr
+...          
+
+  ##  for going inside container &  check type   'env' #  kubectl exec testpod12 -it -c c1 -- /bin/bash
+                                                       #  kubectl exec testpod12 -c c1 env
+
+#  ********************  vi pod7.yml   - 8NODE SELECTOR EXAMPLE - **********************
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nodelabels
+  labels:
+    env: development
+spec:
+    containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+    nodeSelector:   # --- NODE SELECTOR                                    
+       hardware: t2-medium
+...       
+
+      # OR
+
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: mem-server
+spec:
+    containers:
+       - name: dev-server
+         image: centos
+    nodeSelector:  # --- NODE SELECTOR
+         node: "w2"
+...         
+
+
+# *****************    vi pod8.yml  - EXAMPLE OF REPLICATION CONTROLLER - *********************
+
+---
+kind: ReplicationController # ---------kind of  " object "             
+apiVersion: v1
+metadata:
+  name: myreplica   # --------name of  Replication Controller  
+spec:
+  replicas: 2   # ----------------desired no of PODS.    always 2 POD running             
+  selector:          
+    myname: mylabel   #-- $$$$  # must match ""labels""   jis pr ye ''labele'' lga ho us pod ko select krna hai..                          
+  template:        # ----template  defines to launch New PODS. {INSIDE -POD INFORMATIONS}
+    metadata:                  
+      name: testpod8    
+      labels:      # --------selector value need to match labels {FOR PODS}         
+        myname: mylabel  #-- $$$$ 
+    spec:
+     containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+...         
+
+
+
+# **********************    EXAMPLE OF   REPLICA SET   ********************************
+
+---
+kind: ReplicaSet    #-------------updated version of   Replication Controller                                
+apiVersion: apps/v1                            
+metadata:
+  name: myrs      # --------- name of replica set
+spec:
+  replicas: 2  
+  selector:                  
+    matchExpressions:    # -----------------------------    these must match the labels
+      - {key: myname, operator: In, values: [Bhupinder, Bupinder, Bhopendra]}  ## -------------- Bhupinder
+      - {key: env, operator: NotIn, values: [production]}
+  template:      
+    metadata:
+      name: testpod9
+      labels:              
+        myname: Bhupinder   ## -------------- Bhupinder
+    spec:
+     containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"] 
+...         
+
+
+# -------------- &&&&&&&&&&&&&    gaurav
+---
+kind: ReplicaSet
+apiVersion: apps/v1
+metadata:
+  name: repl11
+  labels:             # ----- this label for RC
+    appname: voatinggg
+spec:    # ----  this spec for RC
+  replicas: 3
+  selector:
+    matchLabels:       # <map[string]string>
+      app: myapp1
+  template:
+    metadata:
+      name: pod
+      labels:            # ---- label of pods
+        app: myapp1
+    spec:     # -----  this is for pod
+     containers:
+       - name: container12
+         image: coolgourav147/nginx-custom
+...         
+
+ # -------------- &&&&&&&&&&&&& gaurav
+---
+kind: ReplicaSet
+apiVersion: apps/v1
+metadata:
+  name: newrs0000
+  labels:             # -----  this label for RC
+    appname: voatinggg
+spec:    # ------ this spec for RC
+  replicas: 3
+  selector:
+    matchExpressions:
+          - key: app
+            operator: In
+            values:
+               - myapp1
+               - myapp2
+  template:
+    metadata:
+      name: pod
+      labels:            # ------- label of pods
+        app: myapp1
+    spec:     # -------- this is for pod
+     containers:
+       - name: container12
+         image: coolgourav147/nginx-custom
+...         
+
+      # OR 
+
+---
+kind: ReplicaSet
+apiVersion: apps/v1
+metadata:
+  name: newrs0000
+  labels:             # --- this label for RC
+    appname: voatinggg
+spec:    # ----  this spec for RC
+  replicas: 3
+  selector:
+    matchExpressions:
+          - key: app
+            operator: In
+            values:
+               - myapp44
+               - myapp55
+          - key: app
+            operator: NotIn
+            values:
+               - backend
+
+  template:
+    metadata:
+      name: pod1111
+      labels:
+         app: myapp55
+    spec:     # this is for pod
+     containers:
+       - name: container12
+         image: coolgourav147/nginx-custom
+...         
+
+
+###################################################################
+# -----------***DEVOPS****   TG  LEC-49   ------------
+###################################################################
+
+# **********************    vi mydeployment.yml  -  EXAMPLE OF DEPLOYMENT - ********************************
+---
+kind: Deployment   # --------------------- Deployment 'object'
+apiVersion: apps/v1
+metadata:
+   name: mydeployments     # ------------------- Name of ''Deployment''
+spec:
+   replicas: 2
+   selector:     
+    matchLabels:
+     name: deployment    # ------- same
+   template:
+     metadata:
+       name: testpod
+       labels:
+         name: deployment  # --------ssame
+     spec:
+      containers:
+        - name: c00
+          image: ubuntu
+          command: ["/bin/bash", "-c", "while true; do echo HELL-AAMIR; sleep 5; done"]
+...          
+
+
+     #  OR 
+
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: firstdeploy
+  labels:             # this label for RC
+    appname: firstdeploy
+spec:    # this spec for RC
+  replicas: 5
+  minReadySeconds: 30
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 2
+    type: RollingUpdate
+  selector:
+    matchLabels:       # <map[string]string>
+      app: myapp
+  template:
+    metadata:
+      name: dpod
+      labels:            # label of pods
+        app: myapp
+    spec:     # this is for pod
+     containers:
+       - name: container
+         image: coolgourav147/nginx-custom:v2
+...         
+
+
+         # OR 
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: firstdeploy
+  labels:             # this label for RC
+    appname: firstdeploy
+  annotations:
+    kubernetes.io/change-cause: "my coustom messgege for rolllout"   #######################
+spec:    # this spec for RC
+  replicas: 5
+  selector:
+    matchLabels:       # <map[string]string>
+      app: myapp
+  template:
+    metadata:
+      name: dpod
+      labels:            # label of pods
+        app: myapp
+    spec:     # this is for pod
+     containers:
+       - name: container
+         image: coolgourav147/nginx-custom:v1
+...         
+
+
+###  kubectl rollout history deploy firstdeploy
+###
+# RESULT --- >
+
+# deployment.apps/firstdeploy
+# REVISION  CHANGE-CAUSE
+# 1         <none>
+# 2         <none>
+# 3         kubectl apply --filename=first-deply.yml --record=true
+# 4         my coustom messgege for rolllout        #######################
+
+
+
+##############################################################
+# ------------ ***DEVOPS**** T G  LEC-51   ------------
+##############################################################
+
+# ***** ( container to container )  communication on same Pods *****************
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod   #-----> pod name
+spec:
+  containers:
+    - name: c00    # con-1
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+    - name: c01    # con-2
+      image: httpd
+      ports:
+       - containerPort: 80
+...       
+
+# ----------------------------------------------------------------------------------------------------
+
+# **** **********    ( pod  to pod  ) communication on same Node     *****************
+
+# -------- $$$$$$$   for  vi pod2.yml
+
+--- # vi pod2.yml
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod1
+spec:
+  containers:
+    - name: c01
+      image: nginx   # ---- image
+      ports:
+       - containerPort: 80
+...       
+
+
+ # -------- $$$$$$$   for vi pod3.yml
+
+--- # vi pod3.yml
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod4
+spec:
+  containers:
+    - name: c03
+      image: httpd  # ---- image
+      ports: 
+       - containerPort: 80
+...       
+
+# ----------------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------------------------------
+#                                          - S E R V I C E -   ---->  ( applied to RS )
+
+#  1 ----> ClusterIP           ( default )   (within a cluster)
+#  2 ----> NodePort
+#  3 ----> LoadBalancer
+#  3 ----> Headless
+#
+
+#============================================================================================================
+
+#                                   ' C L U S T E R  IP '
+
+# 1- NODE'S POD   TO   2 - NODE'S POD    COMMUNICATION THROUGH   ***** %%%%%%%%%%%
+
+ # -------- $$$$$$$         vi deployhttpd.yml  
+--- # create deployment                   
+kind: Deployment   # -------- kind is deploymnet 
+apiVersion: apps/v1
+metadata:
+   name: mydeployments
+spec:
+   replicas: 1
+   selector:      # tells the controller which pods to watch/belong to
+    matchLabels:
+     name: deployment
+   template:
+     metadata:
+       name: testpod1
+       labels:
+         name: deployment
+     spec:
+      containers:
+        - name: c00
+          image: httpd
+          ports:
+          - containerPort: 80
+...          
+
+ # -------- $$$$$$$     FOR CREATE SERVICE  ( for Deployment )  --______----------------------
+
+#  vi service.yml        ( this sercixe give static virtual ip for our cluster )
+--- # 
+kind: Service    #---------- Defines to create Service type Object
+apiVersion: v1
+metadata:
+  name: demoservice
+  # namespace: testn # -- if your namespace already exsist  & uwant to create pod in ''testn''
+spec:
+  ports:
+    - port: 80       #---------- Containers port exposed
+      targetPort: 80 #-------------------- Pods port
+  selector:
+    name: deployment #------------ Apply this service to any pods which has the specific label
+  type: ClusterIP    #----------- Specifies the service type i.e ClusterIP or NodePort
+...
+#==========================================================================================================
+
+
+
+
+ # -------- $$$$$$$ gaurv   ReplicationController 
+---
+kind: ReplicationController
+apiVersion: v1
+metadata:
+  name: replicacontroller
+  labels:             # this label for RC
+    appname: voatingapp
+spec:    # this spec for RC
+  replicas: 5
+  template:
+    metadata:
+      name: firstpod1
+      labels:            # label of pods
+        type: app
+    spec:     # this is for pod
+     containers:
+       - name: firstcontainer
+         image: coolgourav147/nginx-custom
+         command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+...         
+
+# $$$$$$$$$$$$$$ gaurav  ' Service '    now ab selector into othrt yml file
+
+---
+kind: Service                             # Defines to create Service type Object
+apiVersion: v1
+metadata:
+  name: myservice
+  labels:
+    servicelab: labelname
+spec:
+  type: NodePort                            # svc type NodePort
+  ports:
+    - nodePort: 32000             # yaha  jo  bhi request ayegi
+      port: 9000                  # yaha ayegi
+      targetPort: 80              # 9000 issko yaha bhej defa
+  selector:
+    name: deployment                    # Apply this service to any pods which has the specific label
+    type: app                      # Specifies the service type i.e ClusterIP or NodePort
+...    
+
+
+
+# ***********  | vi deployhttpd.yml <----|(%%%%%%%%%%%)  NODEPORT |   vi svc.yml  |    ***************************
+---
+kind: Service    # Defines to create Service type Object
+apiVersion: v1
+metadata:
+  name: demoservice
+spec:
+  ports:
+    - port: 80        # Containers port exposed
+      targetPort: 80     # Pods port
+  selector:
+    name: deployment    # Apply this service to any pods which has the specific label
+  type: NodePort        # Specifies the service type i.e ClusterIP or NodePort
+...  
+
+
+
+
+
+
+
+#####################################################################################
+#                         | vi emptydir.yml |  -- V O L U M E S --    
+#####################################################################################
+
+--- # | vi emptydir.yml |
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myvolemptydir # --- pod name
+spec:
+  containers:
+  - name: c1     # ---- Con-1
+    image: centos
+    command: ["/bin/bash", "-c", "sleep 15000"]
+    volumeMounts:                                    # Mount definition inside the container
+      - name: xchange # ---------------VOLUME name same  
+        mountPath: "/tmp/xchange" #----------------------------- mount path         
+  - name: c2     # ---- Con-2
+    image: centos
+    command: ["/bin/bash", "-c", "sleep 10000"]
+    volumeMounts:
+      - name: xchange # ---------------VOLUME name same 
+        mountPath: "/tmp/data"   #------------------------------- mount path            
+  volumes:          # --------volume define                                               
+  - name: xchange
+    emptyDir: {}   # ------ Volume type   ''emptydir''  
+...    
+
+
+
+  # ---------- $$$$$$$$$$   '' HOST PATH ''
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myvolhostpath
+spec:
+  containers:
+  - image: centos
+    name: testc
+    command: ["/bin/bash", "-c", "sleep 15000"]
+    volumeMounts:
+    - mountPath: /tmp/hostpath
+      name: testvolume
+  volumes:
+  - name: testvolume
+    hostPath:
+      path: /tmp/data 
+...
+
+################################################################
+#  ------------ ***DEVOPS**** T G   LEC-52  ------------
+################################################################
+
+
+# ***** ************   PERSISTENT VOLUME    *****************
+
+####     MAKE PERSISTANT VOLUME---
+
+---
+apiVersion: v1
+kind: PersistentVolume    # ----- 'Persistent Volume'   object
+metadata:
+  name: myebsvol     # -------- name of "PV"
+spec:
+  capacity:
+    storage: 1Gi # ---- WE TAKE 10GB TO EBS,,BUT we take only '1Gi'
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  awsElasticBlockStore:   # ----- AWS elastics store
+    volumeID: vol-08ebb4393908cd4a4  # ------ YAHAN APNI EBS VOLUME ID DAALO
+    fsType: ext4
+...    
+
+
+
+
+
+#####    PERSISTANT VOLUME CLAIM---
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim   # ----- 'Persistent Volume Claim'   object
+metadata:
+  name: myebsvolclaim  # -------- name of "PVC"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests: 
+      storage: 1Gi # ----- hmko ""1Gi""  'Persistent Volume'  se milegi
+...      
+
+
+
+                 
+######    FOR USING  PERSISTANT VOLUME CLAIM ---
+
+##  vi deploypvc.yml
+
+
+---
+apiVersion: apps/v1
+kind: Deployment   # ------ deployment object
+metadata:
+  name: pvdeploy   # NAME
+spec:
+  replicas: 1
+  selector:      # tells the controller which pods to watch/belong to
+    matchLabels:
+     app: mypv      ###--- SAME
+  template:
+    metadata:
+      labels:
+        app: mypv   ###--- SAME 
+    spec:
+      containers:
+      - name: shell   # --- CONTAINER
+        image: centos
+        command: ["bin/bash", "-c", "sleep 10000"]
+        volumeMounts:
+        - name: mypd
+          mountPath: "/tmp/persistent" # ------ INSIDE CONTAINER MOUNT PATH  ( WORK HERE )
+      volumes:
+        - name: mypd
+          persistentVolumeClaim:      
+            claimName: myebsvolclaim  # ----------- ebs VOLUME PATH          ( BACKUP HERE )
+...                        
+ 
+
+
+
+
+
+# *************************************    HEALTHCHECK/LIVENESSPROBE   ********************************
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: mylivenessprobe
+spec:
+  containers:
+  - name: liveness
+    image: ubuntu
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy; sleep 1000
+    livenessProbe:   # ----  liveness-prob
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5  # ---- after '5sec' start the Helath-chek
+      periodSeconds: 5        # ---- next Health-check after '5sec'
+      timeoutSeconds: 30      # ---- if dont reply frm Health-check. kill the process and restart the containr.
+...      
+
+
+
+
+
+####################################################################
+# ------------ ***DEVOPS****  T G LEC-53------------
+####################################################################
+
+# ************    CONFIGMAP   ***************************
+
+#AS A VOLUME  -------
+
+##  vi deployconfig.yml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myvolconfig    # ---- NAME 0f cm
+spec:
+  containers:
+  - name: c1
+    image: centos
+    command: ["/bin/bash", "-c", "while true; do echo Technical-Guftgu; sleep 5 ; done"]
+    volumeMounts:
+      - name: testconfigmap   ####---- SAME
+        mountPath: "/tmp/config"   # the config files will be mounted as ReadOnly by default here
+  volumes:
+  - name: testconfigmap     ####---- SAME
+    configMap:    # ----- ''CONFIG MAP''   object
+       name: mymap   # this should match the config map name created in the first step  ( sample.conf  )
+       items:
+       - key: sample.conf
+         path: sample.conf
+...         
+
+#   AS A ENVIRONMENT VARIABLE --------
+
+##  vi deployenv.yml
+
+---
+apiVersion: v1
+kind: Pod
+
+  name: myenvconfig
+spec:
+  containers:
+  - name: c1
+    image: centos
+    command: ["/bin/bash", "-c", "while true; do echo Technical-Guftgu; sleep 5 ; done"]
+    env:
+    - name: MYENV         # --- env name in which value of the key is stored
+      valueFrom:
+        configMapKeyRef:  # ---- refrence config map key 
+          name: mymap      # name of the config created
+          key: sample.conf # ----- take this file  and run on the container 
+
+
+
+
+
+# ************************   SECRET ( for all secret  file to hide)*********************
+
+##   vi deploysecret.yml               
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myvolsecret
+spec:
+  containers:
+  - name: c1
+    image: centos
+    command: ["/bin/bash", "-c", "while true; do echo Technical-guftgu; sleep 5 ; done"]
+    volumeMounts:
+      - name: testsecret
+        mountPath: "/tmp/mysecrets"   # the secret files will be mounted as ReadOnly by default here
+  volumes:
+  - name: testsecret   # ----create volume name is 'testsecret'
+    secret:
+       secretName: mysecret  # ----- take this file 
+...       
+
+
+##########################################################################
+#------------------ ***DEVOPS****    T G   LEC-54   -------------------
+##########################################################################
+
+#  ********************************** NAMESPACES  **********************
+
+
+---
+apiVersion: v1
+kind: Namespace  # ---- object of Namespace
+metadata:
+   name: dev
+   labels:
+     name: dev
+...     
+
+
+## create namespace through  yml file
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-pod
+  namespace: project-1
+spec:
+  containers:
+    - name: web
+      image: nginx
+      ports:
+        - name: web
+          containerPort: 80
+          protocol: TCP
+...
+
+
+
+
+# ------------ $$$$$$$$$$$$$$  for testing NAMESPACE --------------------
+
+# vi pod.yml
+---
+kind: Pod                              
+apiVersion: v1                     
+metadata:                           
+  name: testpod                  
+spec:                                    
+  containers:                      
+    - name: c00                     
+      image: ubuntu              
+      command: ["/bin/bash", "-c", "while true; do echo Technical Guftgu; sleep 5 ; done"]
+  restartPolicy: Never   
+...
+
+    # OR
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: pod4
+  namespace: testns ## mention ns name
+  labels:
+    app: myapp1
+    type: frontend
+spec:
+  containers:
+    - name: seco
+      image: coolgourav147/nginx-custom
+      resources:
+         requests:
+           memory: 500Mi    ## always lower than limits
+         limits:
+           memory: 900Mi    ## always greater than requests
+...
+
+## when u create pods in ns
+ #   kubectl apply -f podname.yml
+  
+
+
+#############################################################
+#                    -  R E S O U R C E S   -  
+#############################################################
+#__________________________________________________________________
+
+|------------------------------------------------|
+|
+|     1 core cpu  == 1000 milli cpu              |
+| 
+| eg: 4 core cpu  == 4000 milli cpu              |
+|
+|----------------------------------------------- |
+|for MEMORY:-   KB  OR    KBi
+|               GB  OR    GBi                    |
+|               MB  OR    MBi
+|                                                |
+|
+| 1 KB == 1000 bytes ,,,  1 KBi == 1024 bytes    |
+|  
+| 1 MB == 1000 KB    ,,,  1 MBi == 1024 KBi      |
+|
+| 1 GB == 1000 MB    ,,,  1 GBi == 1024 MBi      |
+|
+|------------------------------------------------|      
+#__________________________________________________________________
+
+#------------------------------------------------------------------------------------------------------------------------------
+
+#  we are creat a pod with  {  requests   &  limit   }
+
+--- # T G      poderesources.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resources    # --- pod name  
+spec:
+  containers:
+  - name: resource
+    image: centos
+    command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+    resources:        ## ---- Request & Limit                                     
+      requests:    # --------------------------------REQUEST
+        memory: "64Mi"
+        cpu: "100m"
+      limits:      # --------------------------------MAX LIMITS  { LIMITS >> REQUESTS } { LIMITS Always maximum & equal to REQUEST  }
+        memory: "128Mi"
+        cpu: "200m"        ## limit hameha zyda hogi requst se
+...   
+     
+# 1 vi poderesources.yml
+# 2 kubectl apply -f poderesources.yml                                     (  pod/resources created)
+
+#   No imp : check which namespace currently are  you working ? 
+# 3  kubectl config view | grep namespace:                                  (check which Nmaespace are uworking )          
+# 4  kubectl get pods                                                      ( resources   1/1     Running)
+# 5  kubectl describe pods resources                                        ( resource= pod name)  ( showing limit and request )
+# 6  kubectl delete -f  poderesources.yml  
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+#  | vi resourcequota.yml |        RESOURCEQUOTA          
+
+
+# -------------------------------------------------------------------------------------------------------
+
+# NOTE :--     RESOURCE QUOTA is always set to the Namespace    
+
+--- # we define resource quota 
+apiVersion: v1
+kind: ResourceQuota   # ------- object is  ' ResourceQuota '
+metadata:
+   name: myquota  # ---- name of   ' ResourceQuota '
+spec:
+  hard:
+    limits.cpu: "400m"   # --- total
+    limits.memory: "400Mi"
+    requests.cpu: "200m"
+    requests.memory: "200Mi"
+...   
+
+
+# CEATE POD for ResourceQuota -----------
+
+--- # CEATE POD
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: deployments
+spec:
+  replicas: 3 # ---- 3 replica 
+  selector:      
+    matchLabels:
+     objtype: deployment
+  template:
+    metadata:
+      name: testpod8
+      labels:
+        objtype: deployment
+    spec:
+     containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo hello-aamir; sleep 5 ; done"]
+         resources:
+            requests:     # ----------- REQUEST { here ,, we only define request not limit }
+              cpu: "200m"     # "400m" total    & 3 replica   
+
+#   scheduling failed due  to low resource ...              
+
+#--------------------------------------------------------------------------------------------------------
+
+# vi cpudefault.yml
+
+--- # 
+apiVersion: v1
+kind: LimitRange  # ----- hm limit define kr rah hain.
+metadata:
+  name: cpu-limit-range  # -- NAME
+spec:
+  limits:
+   - default: 
+       cpu: 1
+     defaultRequest: 
+       cpu: 0.5 
+     type: Container
+...         
+
+
+# &&&&&&&&&&&&&&&&&&&&
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+   name: myquota
+spec:
+  hard:
+    requests.cpu: 0.5
+    requests.memory: 500Mi
+    limits.cpu: 1
+    limits.memory: 1Gi
+...    
+
+
+
+##############################################
+#### rajesh k8s-9    39'41
+##############################################
+---
+apiVersion: v1
+kind: ResourceQuota       # --- object is ResourceQuota
+metadata:
+  name: project-1-quota  # --- POD  name
+  namespace: project-1   # --- RQ for project-1 namespace
+spec:
+  hard:
+    pods: "3"
+    configmaps: "10"
+    secrets: "10"
+    services: "10"
+    persistentvolumeclaims: "50"
+    limits.memory: "800Mi" #-- 800 MB
+    limits.cpu: "10"       #-- 1O CORES
+
+
+#### set limit to poD
+
+---
+apiVersion: v1
+kind: Pod  # -- object is PODS
+metadata:
+   name: web-server  # -- name of PODS
+   namespace: project-1
+spec:
+  containers:
+     - image: nginx   
+       name: web-server # -- NAME OF CONATINER
+       resources: 
+         limits: 
+            memory: "300Mi"
+            cpu: "1"
+__________________________________________________________________
+
+-------------------------------------------------|
+|
+| 1 core cpu  == 1000 milli cpu                  |
+| 
+| 4 core cpu  == 4000 milli cpu                  |
+|
+|----------------------------------------------- |
+|for MEMORY:-   KB  OR    KBi
+|               GB  OR    GBi                    |
+|               MB  OR    MBi
+|                                                |
+|
+| 1 KB == 1000 bytes ,,,  1 KBi == 1024 bytes    |
+|  
+| 1 MB == 1000 KB    ,,,  1 MBi == 1024 KBi      |
+|
+| 1 GB == 1000 MB    ,,,  1 GBi == 1024 MBi      |
+|
+|------------------------------------------------|      
+__________________________________________________________________
+
+
+
+
+######     vi limit-cpu-container.yml
+
+---
+apiVersion: v1
+kind: LimitRange  # ----- hm limit define kr rah hain.
+metadata:
+  name: limit-mem-cpu-per-container  # -- NAME
+spec:
+  limits:
+    - max:
+        cpu: "800m"
+        memory: "1Gi"
+      min:
+        cpu: "100m"
+        memory: "99Mi"  
+      default:    # --default - MAX
+        cpu: "700m"
+        memory: "900Mi"
+      defaultRequest:  # --default - MIN
+        cpu: "110m"
+        memory: "111Mi"
+      type: Container   #---  set limit for CONTAINER
+
+
+###### kubectl apply -f limit-cpu-container.yml
+ 
+###### kubectl get limitrange
+
+
+@@@ creat pod and container and set limit 
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox1111
+spec:
+  containers:
+    - name: busybox1-cnt01
+      image: busybox
+      command: ["/bin/sh"]
+      args: ["-c", "while true; do echo HELLO AAMIR-IMRAN-AHMED; sleep 10 ; done"]
+      resources:
+        requests:     # --- MINIMUM value of container
+           memory: "100Mi"  
+           cpu: "100m"
+        limits:       # --- MAXIMUM value of container
+           memory: "200Mi"  
+           cpu: "500m" 
+  
+ 
+
+
+
+Now  if u apply limit but not request-------------
+
+
+
+apiVersion: v1
+kind: LimitRange  # ----- hm limit define kr rah hain.
+metadata:
+  name: cpu-limit-range
+spec:
+  limits:
+  - default:
+      cpu: 1
+    defaultRequest:
+      cpu: 0.5
+    type: Container
+
+
+
+
+WE APPLY LIMIT-----------------------------
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default-cpu-demo-2
+spec:
+  containers:
+  - name: default-cpu-demo-2-ctr
+    image: nginx
+    resources:
+      limits:
+        cpu: "1"
+
+
+
+
+
+
+If we apply REQEUST  but not LIMIT --------------------------------
+
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default-cpu-demo-3
+spec:
+  containers:
+  - name: default-cpu-demo-3-ctr
+    image: nginx
+    resources:
+      requests:
+        cpu: "0.75"
+
+
+
+
+**************************  MEMDEFAULT.YML   ( for  memory  ) ************************
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mem-min-max-demo-lr
+spec:
+  limits:
+  - max:
+      memory: 1Gi
+    min:
+      memory: 500Mi
+    type: Container
+
+
+
+
+
+for meme1.yml------------------------------
+
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: constraints-mem-demo
+spec:
+  containers:
+  - name: constraints-mem-demo-ctr
+    image: nginx
+    resources:
+      limits:
+        memory: "800Mi"
+      requests:
+        memory: "600Mi"
+
+
+
+
+
+
+
+************** AUTO  SCALING  ******************************
+
+FOR DEPLOYHPA.YML
+#########vi deployhpa.yml 
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+   name: mydeploy
+spec:
+   replicas: 1
+   selector:
+    matchLabels:
+     name: deployment
+   template:
+     metadata:
+       name: testpod8
+       labels:
+         name: deployment
+     spec:
+      containers:
+        - name: c00
+          image: httpd
+          ports:
+          - containerPort: 80
+          resources:
+            limits:
+              cpu: 500m
+            requests:
+              cpu: 200m
+...              
+
+
+------------------TECHNICAL GUFTUGU***DEVOPS****LEC-55-------------------
+
+*************************** JOBS ******************************
+
+
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: testjob
+spec:
+  template:
+    metadata:
+      name: testjob
+    spec:
+      containers:
+      - name: counter
+        image: centos:7
+        command: ["bin/bash", "-c", "echo Technical-Guftgu; sleep 5"]
+      restartPolicy: Never
+
+
+
+
+***************************PARALELLISAM******************************
+
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mypod
+spec:
+  parallelism: 5                           # Runs for pods in parallel
+  activeDeadlineSeconds: 10  # Timesout after 30 sec
+  template:
+    metadata:
+      name: testjob
+    spec:
+      containers:
+      - name: counter
+        image: centos:7
+        command: ["bin/bash", "-c", "echo Technical-Guftgu; sleep 20"]
+      restartPolicy: Never
+
+
+
+************  coron  job  pattern  ( scheduling g)  or (periodically)************************
+
+
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+ name: bhupi
+spec:
+ schedule: "* * * * *"
+ jobTemplate:
+   spec:
+     template:
+       spec:
+         containers:
+         - image: ubuntu
+           name: bhupi
+           command: ["/bin/bash", "-c", "echo Technical-Guftgu; sleep 5"]
+         restartPolicy: Never
+
+
+
+*************************** INIT CONTAIER ******************************
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: initcontainer
+spec:
+  initContainers:
+  - name: c1
+    image: centos
+    command: ["/bin/sh", "-c", "echo LIKE AND SUBSCRIBE TECHNICAL GUFTGU > /tmp/xchange/testfile; sleep 30"]
+    volumeMounts:        
+      - name: xchange
+        mountPath: "/tmp/xchange"  
+  containers:
+  - name: c2
+    image: centos
+    command: ["/bin/bash", "-c", "while true; do echo `cat /tmp/data/testfile`; sleep 5; done"]
+    volumeMounts:
+      - name: xchange
+        mountPath: "/tmp/data"
+  volumes:                            
+  - name: xchange
+    emptyDir: {}
+
+
+
+
+&&&&&&&&&&&&&& init container
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: initcontainer
+  labels:
+    type1: eee
+spec:
+  containers:
+    - name: c10
+      image: coolgourav147/nginx-custom
+      env:
+        - name: myname
+          value: aammiirr
+      args: ["sleep","3600"]
+    - name: c20
+      image: coolgourav147/nginx-custom
+  initContainers:
+    - name: c30
+      image: coolgourav147/nginx-custom
+      env:
+        - name: myname
+          value: aammiirr
+      args: ["sleep","30"]
+    - name: c40
+      image: coolgourav147/nginx-custom
+      env:
+        - name: myname
+          value: aammiirr
+      args: ["sleep","30"]
+
+
+
+####################################################################################################################################
+
+FOR --      vi myquota.yaml
+
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  creationTimestamp: null
+  name: myquota
+  namespace: mysession
+spec:
+  hard:
+    cpu: 1
+    memory: 2G
+status: {}
+
+
+
+
+########################################################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,94 @@
+#############################################################
+   #------------   *** DEVOPS ****  T G  LEC-49   --------
+#############################################################
+
+# -------------------------------------------------------------------------------------------------------
+#                *************  EXAMPLE OF LABELS  *************************
+# vi pod6.yml 
+--- # labels
+kind: Pod
+apiVersion: v1
+metadata:
+  name: delhipod
+  labels:                                                   
+    env: developments  # --- LABELS-1
+    class: pods        # --- LABELS-2
+spec:
+    containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Hello-AAMIR; sleep 5 ; done"]
+...        
+
+# ---------- $$$$$$$$$$ gaurav script  for  port expose AND LABELS 
+---
+kind: Pod
+apiVersion: v1
+metadata:
+   name: thirrd
+   labels:
+      podname: secondpodlbl   # --- LABELS 
+spec:
+  containers:
+    - name: secondpod
+      image: coolgourav147/nginx-custom  # --- gaurav image
+...
+
+## note :: port expose run cmnd
+#---->$    kubectl expose pod thirrd --port=8000 --target-port=80 --name my-first-service
+ 
+
+# ---------- $$$$$$$$$$ env or lbel $$$$$
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod12
+  labels:
+    type1: www   # --- LABELS 
+spec:
+  containers:
+    - name: c1
+      image: nginx
+      env:
+        - name: myname
+          value: aammiirr
+...          
+
+  ##  for going inside container &  check type   'env' #  kubectl exec testpod12 -it -c c1 -- /bin/bash
+                                                       #  kubectl exec testpod12 -c c1 env
+
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------
+
+# Follow technical guftugu LEC-49
+
+# *********************   L A B E L S   **************
+
+# 1 vi pod6.yml                      #----- ( paste script of LABEL in this) MAKING manifest  DECLERATIVE LEBL
+#   kubectl label pods podname env=testing  type=frontend  #----- ( imperative method to  label )
+#   kubectl label --overwrite pods podname cc=dd  bb=aa    #----- ( overwrite label imperative )
+#   kubectl label pods podname env-                        #----- ( for unlabeled pod )
+#   kubectl label pods --all new=pod                       #----- ( label all pods in same ns mperative )                              
+# 2  kubectl apply -f pod6.yml                             #------ Result (   pod/delhipod created   )   
+# 3  kubectl get pods                                      #------ (pod name is delhipod)
+# 3 kubectl describe pod podname                           #------ ( seeing label. And diifent things )
+# 4 kubectl get pods -o wide                               #------ ( full pod details IP of pod )
+# 5 kubectl get pods --show-labels   #------ {class=pods,env=developments} (check labels . findout pod with labels)
+#   kubectl get nodes --show-labels            #------ check labels on nodes in default namespace  
+#   kubectl get pods --show-labels -n testns   #------ check labels on podes in  'testns' namespace 
+
+# 6  kubectl label pods delhipod myname=AAmir            #------pod/delhipod labeled ( imperative label comnd)
+# 7  kubectl get pods --show-labels      
+# 8  kubectl get pods -l   env=developments                        #------ ( find pod with LABEL)   
+#    kubectl get pods -l   class=pods,env=developments             #------ (jis pod pe y 2 label ho use dikhao)                               
+# 9  kubectl get pods -l   env!=developments                       #------ ( ! this marks showing jis pr ye label n alga ho wo pod)
+# 10  kubectl delete pod -l env=developments                       #------ ( pod delete with jispr ye label lga ho)
+# 11  kubectl get pods -l 'env in(developments,testing)'           #------ { find  pod with multiple label}
+# 12  kubectl get pods -l 'env notin(developments,testing)'        #------ { jis me ye label nhi lga ho wo pod}
+# 13  kubectl delete pods -l 'env notin(developments,testing)'     #------ {jis pod pr ye labelna lga ho usko delete}
+# 13 kubectl delete pods -l 'env in(developments,testing)'         #------ {jis pod pr ye label lga ho usko delete}
+
+# For remove the labels
+# kubectl label nodes ip-172-31-44-220(worker-1) node-
